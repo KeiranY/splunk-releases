@@ -11,11 +11,12 @@ import cliProgress from 'cli-progress'
 
 program
   .storeOptionsAsProperties(false)
+  .option('-d, --download [filename]', 'download splunk to [filename]', process.env.SPLUNKRELEASES_DOWNLOAD)
   .option('-p, --platform <platform>', 'filter to specified platform i.e. linux', process.env.SPLUNKRELEASES_PLATFORM)
   .option('-a, --arch <arch>', 'filter to specified architecture i.e x86_64', process.env.SPLUNKRELEASES_ARCH)
   .option('-v, --version <version>', 'filter to specified version i.e 8.1.0.1', process.env.SPLUNKRELEASES_VERSION)
   .option('-f, --filetype <filetype>', 'filter to specified filetype i.e tgz', process.env.SPLUNKRELEASES_FILETYPE)
-  .option('-d, --download [filename]', 'download splunk to [filename]', process.env.SPLUNKRELEASES_DOWNLOAD)
+  .option('-r, --product <product>', 'filter to specified platform (enterprise/forwarder)', process.env.SPLUNKRELEASES_PLATFORM)
   .parse(process.argv)
 
 const filter = async (downloads: Download[], question: string, field: string): Promise<Download[]> => {
@@ -35,7 +36,7 @@ const filter = async (downloads: Download[], question: string, field: string): P
     }
   }
   return downloads
-} 
+}
 
 (async () => {
   var downloads = await getDownloads;
@@ -43,6 +44,7 @@ const filter = async (downloads: Download[], question: string, field: string): P
   downloads = await filter(downloads, 'Choose a architecture', 'arch')
   downloads = await filter(downloads, 'Choose a version', 'version')
   downloads = await filter(downloads, 'Choose a file type', 'filetype')
+  downloads = await filter(downloads, 'Choose a product', 'product')
   console.log(chalk.bold('Link: ') + chalk.underline(downloads[0].link))
   if (program.opts()['download']) {
     const outFile = fs.createWriteStream(typeof program.opts()['download'] === 'string' ? program.opts()['download'] : downloads[0].filename);

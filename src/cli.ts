@@ -1,31 +1,21 @@
 import inquirer from 'inquirer';
 import { ListQuestion } from 'inquirer';
-import { getDownloads } from './download';
+import { Download, getDownloads } from './download';
+
+const filter = async (downloads: Download[], question: string, field: string): Promise<Download[]> => {
+  const choices = [...new Set(downloads.map(x => x[field]))];
+  if (choices.length > 1) {
+    const prompt: ListQuestion = {type: 'list', name: question, choices: choices};
+    const answer = await inquirer.prompt(prompt);
+    downloads = downloads.filter(x => x[field]===answer[question]);
+  }
+  return downloads
+} 
 
 (async () => {
   var downloads = await getDownloads;
-  
-  const platforms = [...new Set(downloads.map(x => x.platform))];
-  if (platforms.length > 1) {
-    const platformQuestion: ListQuestion = {type: 'list', name: 'Choose a platform', choices: platforms};
-    const platform = await inquirer.prompt(platformQuestion);
-    downloads = downloads.filter(x => 
-      x.platform===platform['Choose a platform']);
-  }
-
-  const archs = [...new Set(downloads.map(x => x.arch))]
-  if (archs.length > 1) {
-    const archQuestion: ListQuestion = {type: 'list', name: 'Choose a architecture', choices: archs};
-    const arch = await inquirer.prompt(archQuestion);
-    downloads = downloads.filter(x => x.arch===arch['Choose a architecture']);
-  }
-
-  const versions = [...new Set(downloads.map(x => x.version))]
-  if (versions.length > 1) {
-    const versionQuestion: ListQuestion = {type: 'list', name: 'Choose a version', choices: versions};
-    const version = await inquirer.prompt(versionQuestion);
-    downloads = downloads.filter(x => x.version===version['Choose a version']);
-  }
-
+  downloads = await filter(downloads, 'Choose a platform', 'platform')
+  downloads = await filter(downloads, 'Choose a architecture', 'arch')
+  downloads = await filter(downloads, 'Choose a version', 'version')
   console.log(downloads[0].link + '\n')
 })()

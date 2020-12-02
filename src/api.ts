@@ -68,7 +68,7 @@ app.get('/details', (req: express.Request, res: express.Response, next: NextFunc
 })
 
 
-const allowedFields = ["arch", "link", "filename", "md5", "oplatform", "platform", "sha512", "thankyou", "version"]
+const allowedFields = ["arch", "link", "filename", "filetype", "md5", "oplatform", "platform", "sha512", "thankyou", "version"]
 app.get('/detail/:field', (req: express.Request, res: express.Response, next: NextFunction): void => {
     if (!allowedFields.includes(req.params.field)) {
         res.status(404)

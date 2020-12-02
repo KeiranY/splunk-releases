@@ -32,7 +32,7 @@ const requestFilter = (req: express.Request & {query: ParsedQs}): Download[] => 
         (!req.query.platform || req.query.platform.toString().toLowerCase() === x.platform.toLowerCase()) &&
         (!req.query.arch || req.query.arch.toString().toLowerCase() === x.arch.toLowerCase()) && 
         (!req.query.version || versionMatch(req.query.version.toString(), x.version)) &&
-        (!req.query.file_type || req.query.file_type.toString().toLocaleLowerCase() === x.link.split('.').pop()) &&
+        (!req.query.filetype || req.query.filetype.toString().toLocaleLowerCase() === x.filetype) &&
         (!req.query.product || req.query.product.toString().toLowerCase() === x.product.toLowerCase())
     )
 }

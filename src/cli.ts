@@ -17,5 +17,6 @@ const filter = async (downloads: Download[], question: string, field: string): P
   downloads = await filter(downloads, 'Choose a platform', 'platform')
   downloads = await filter(downloads, 'Choose a architecture', 'arch')
   downloads = await filter(downloads, 'Choose a version', 'version')
+  downloads = await filter(downloads, 'Choose a file type', 'filetype')
   console.log(downloads[0].link + '\n')
 })()

@@ -15,6 +15,7 @@ export interface Download {
   thankyou: string;
   version: string;
   product: string;
+  filetype: string;
 }
 
 const getDownload = (url: string, product: string) => { return new Promise<Download[]>((resolve, reject) => {
@@ -24,6 +25,7 @@ const getDownload = (url: string, product: string) => { return new Promise<Downl
        .match(/data-link=.*?>/gm)
        .map((x: string) => x.match(extractRex))
        .map((x: any) => {
+         x.groups.filetype = x.groups.filename.split('.').pop();
          x.groups.product = product;
          return x.groups;
         }));

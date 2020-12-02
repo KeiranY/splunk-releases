@@ -11,11 +11,11 @@ import cliProgress from 'cli-progress'
 
 program
   .storeOptionsAsProperties(false)
-  .option('-p, --platform <platform>', 'filter to specified platform i.e. linux')
-  .option('-a, --arch <arch>', 'filter to specified architecture i.e x86_64')
-  .option('-v, --version <version>', 'filter to specified version i.e 8.1.0.1')
-  .option('-f, --filetype <filetype>', 'filter to specified filetype i.e tgz')
-  .option('-d, --download [filename]', 'download splunk to [filename]')
+  .option('-p, --platform <platform>', 'filter to specified platform i.e. linux', process.env.SPLUNKRELEASES_PLATFORM)
+  .option('-a, --arch <arch>', 'filter to specified architecture i.e x86_64', process.env.SPLUNKRELEASES_ARCH)
+  .option('-v, --version <version>', 'filter to specified version i.e 8.1.0.1', process.env.SPLUNKRELEASES_VERSION)
+  .option('-f, --filetype <filetype>', 'filter to specified filetype i.e tgz', process.env.SPLUNKRELEASES_FILETYPE)
+  .option('-d, --download [filename]', 'download splunk to [filename]', process.env.SPLUNKRELEASES_DOWNLOAD)
   .parse(process.argv)
 
 const filter = async (downloads: Download[], question: string, field: string): Promise<Download[]> => {

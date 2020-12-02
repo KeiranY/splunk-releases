@@ -1,3 +1,13 @@
 /node_modules
 dist
 /.vscode
+
+# Splunk known file extensions
+*.msi
+*.tgz
+*.deb
+*.rpm
+*.dmg
+*.Z
+*.p5p
+*.txz

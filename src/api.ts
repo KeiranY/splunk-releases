@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import express, { NextFunction } from 'express';
 import { ParsedQs } from 'qs';
 import { Download, getDownloads } from './download';
+import pick from 'object.pick';
 
 const app = express();
 let downloads: Download[];
@@ -42,9 +43,26 @@ const requestFilter = (req: express.Request & { query: ParsedQs }): Download[] =
   );
 };
 
+const fieldFilter = (download: Download[], field: any): any[] => {
+  let ret = download as any[];
+  if (typeof field === 'string') {
+    ret = ret.map((x) => x[field]);
+  } else {
+    const fields = field as string[];
+    ret = ret.map((item) =>
+      fields.reduce((arr, field) => {
+        if (item[field] !== undefined) arr[field] = item[field];
+        return arr;
+      }, {}),
+    );
+  }
+  ret = [...new Set(ret)];
+  return ret;
+};
+
 app.get('/download', (req: express.Request, res: express.Response, next: NextFunction): void => {
   updateDownloads()
-    .then(() => {
+    .then((result) => {
       const download = [...new Set(requestFilter(req))];
       if (download.length > 1) {
         const response = Object();
@@ -58,7 +76,7 @@ app.get('/download', (req: express.Request, res: express.Response, next: NextFun
         res.send(`303 see other ${download[0].link}`);
       }
     })
-    .catch(() => {
+    .catch((err) => {
       res.status(500);
       next();
     });
@@ -66,11 +84,24 @@ app.get('/download', (req: express.Request, res: express.Response, next: NextFun
 
 app.get('/details', (req: express.Request, res: express.Response, next: NextFunction): void => {
   updateDownloads()
-    .then(() => {
+    .then((result) => {
       res.status(200);
-      res.send([...new Set(requestFilter(req))]);
+      let ret = [...new Set(requestFilter(req))];
+      if (ret.length === 0) {
+        res.status(404);
+        res.send(`no results found`);
+        return;
+      }
+
+      if (req.query.field) ret = fieldFilter(ret, req.query.field);
+      if (ret[0] === undefined) {
+        res.status(404);
+        res.send(`field '${req.query.field}' is incorrect. supported options are: ${allowedFields}.`);
+        return;
+      }
+      res.send(ret);
     })
-    .catch(() => {
+    .catch((err) => {
       res.status(500);
       next();
     });

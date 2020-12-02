@@ -27,5 +27,5 @@ import { getDownloads } from './download';
     downloads = downloads.filter(x => x.version===version['Choose a version']);
   }
 
-  console.log(downloads[0].link)
+  console.log(downloads[0].link + '\n')
 })()

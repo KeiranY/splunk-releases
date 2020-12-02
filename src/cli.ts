@@ -1,13 +1,38 @@
+import http from 'http';
+import fs from 'fs';
+
 import inquirer from 'inquirer';
 import { ListQuestion } from 'inquirer';
 import { Download, getDownloads } from './download';
+import { program } from 'commander';
+import chalk from 'chalk';
+import axios, { AxiosResponse } from 'axios';
+import cliProgress from 'cli-progress'
+
+program
+  .storeOptionsAsProperties(false)
+  .option('-p, --platform <platform>', 'filter to specified platform i.e. linux')
+  .option('-a, --arch <arch>', 'filter to specified architecture i.e x86_64')
+  .option('-v, --version <version>', 'filter to specified version i.e 8.1.0.1')
+  .option('-f, --filetype <filetype>', 'filter to specified filetype i.e tgz')
+  .option('-d, --download [filename]', 'download splunk to [filename]')
+  .parse(process.argv)
 
 const filter = async (downloads: Download[], question: string, field: string): Promise<Download[]> => {
-  const choices = [...new Set(downloads.map(x => x[field]))];
-  if (choices.length > 1) {
-    const prompt: ListQuestion = {type: 'list', name: question, choices: choices};
-    const answer = await inquirer.prompt(prompt);
-    downloads = downloads.filter(x => x[field]===answer[question]);
+  if (program.opts()[field]) {
+    console.log(`${chalk.green('?')} ${chalk.bold(question)+':'} ${chalk.cyan(program.opts()[field])}`)
+    downloads = downloads.filter(x => x[field].toLowerCase()===program.opts()[field].toLowerCase());
+    if (downloads.length === 0) {
+      console.log(`No events match ${field} = ${program[field]}`)
+      process.exit(1)
+    }
+  } else {
+    const choices = [...new Set(downloads.map(x => x[field]))];
+    if (choices.length > 1) {
+      const prompt: ListQuestion = {type: 'list', name: question, choices: choices};
+      const answer = await inquirer.prompt(prompt);
+      downloads = downloads.filter(x => x[field]===answer[question]);
+    }
   }
   return downloads
 } 
@@ -18,5 +43,27 @@ const filter = async (downloads: Download[], question: string, field: string): P
   downloads = await filter(downloads, 'Choose a architecture', 'arch')
   downloads = await filter(downloads, 'Choose a version', 'version')
   downloads = await filter(downloads, 'Choose a file type', 'filetype')
-  console.log(downloads[0].link + '\n')
+  console.log(chalk.bold('Link: ') + chalk.underline(downloads[0].link))
+  if (program.opts()['download']) {
+    const outFile = fs.createWriteStream(typeof program.opts()['download'] === 'string' ? program.opts()['download'] : downloads[0].filename);
+    const bar = new cliProgress.SingleBar({
+      format: `${chalk.green(downloads[0].filename)} ${chalk.cyan('{bar}')} | {percentage}% | {value}/{total}  | ETA: {eta}s`,
+      barCompleteChar: '\u2588',
+      barIncompleteChar: '\u2591',
+      hideCursor: true
+    });
+    axios({
+      url: downloads[0].link,
+      method: 'GET',
+      responseType: 'stream'
+    }).then((result: AxiosResponse<http.ServerResponse>) => {
+      bar.start(result.headers['content-length'], 0)
+      result.data.on('data', (chunk) => bar.increment(chunk.length));
+      result.data.on('close', () => {
+        bar.stop()
+        console.log(chalk.bold('Downloaded to: ') + chalk.underline(outFile.path))
+      })
+      result.data.pipe(outFile);
+    })
+  }
 })()

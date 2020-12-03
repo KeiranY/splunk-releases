@@ -40,7 +40,7 @@ const getDownloads = new Promise<Download[]>((resolve, reject) => {
   Promise.all([getDownload(enterpriseCurrentReleaseURL, 'enterprise'), 
               getDownload(enterprisePreviousReleaseURL, 'enterprise'), 
               getDownload(ufCurrentReleaseURL, 'forwarder'), 
-              getDownload(ufPreviousReleaseURL, 'forwarder')])
+              /*getDownload(ufPreviousReleaseURL, 'forwarder')*/])
     .then((downloads) => {
       resolve(downloads.reduce((p, c) => p.concat(c)))
     })

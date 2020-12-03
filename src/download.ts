@@ -32,7 +32,7 @@ const getDownload = (url: string, product: string) => { return new Promise<Downl
          return x.groups;
         }));
    })
-   .catch(error => reject)
+   .catch(error => reject(error))
 })}
 export { getDownload };
 
@@ -44,6 +44,6 @@ const getDownloads = new Promise<Download[]>((resolve, reject) => {
     .then((downloads) => {
       resolve(downloads.reduce((p, c) => p.concat(c)))
     })
-    .catch(error => reject)
+    .catch(error => reject(error))
 })
 export { getDownloads };

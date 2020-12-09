@@ -3,22 +3,22 @@ import { ParsedQs } from 'qs'
 import { Download, getDownloads } from './download';
 
 const app = express();
-var downloads: Download[];
+let downloads: Download[];
 
-const updateDownloads = (force: boolean = false) => {
+const updateDownloads = (force = false) => {
     return new Promise<void>((resolve, reject) => {
-        if(!downloads) {
-            getDownloads.then((result) => {
+        if(!downloads || force) {
+            getDownloads().then((result) => {
                 downloads = result;
                 resolve();
-            }).catch(err => reject);
+            }).catch(err => reject(err));
         } else resolve();
     })
 }
 
 const versionMatch = (query: string, release: string): boolean => {
-    var split1 = query.split('.');
-    var split2 = release.split('.');
+    const split1 = query.split('.');
+    const split2 = release.split('.');
     // If we've specified more sections in our query (ex 8.1.0.1) than exist in the release (ex 8.1.0), return false
     if (split1.length > split2.length) return false;
     return Array(query.length)
@@ -38,7 +38,7 @@ const requestFilter = (req: express.Request & {query: ParsedQs}): Download[] => 
 }
 
 app.get('/download', (req: express.Request, res: express.Response, next: NextFunction): void => {
-    updateDownloads().then((result) => {
+    updateDownloads().then(() => {
         const download = [...new Set(requestFilter(req))]
         if (download.length > 1) {
             const response = Object();
@@ -51,17 +51,17 @@ app.get('/download', (req: express.Request, res: express.Response, next: NextFun
             res.location(download[0].link)
             res.send(`303 see other ${download[0].link}`)
         }
-    }).catch((err) => {
+    }).catch(() => {
         res.status(500);
         next();
     });
 })
 
 app.get('/details', (req: express.Request, res: express.Response, next: NextFunction): void => {
-    updateDownloads().then((result) => {
+    updateDownloads().then(() => {
         res.status(200);
         res.send([...new Set(requestFilter(req))]);
-    }).catch((err) => {
+    }).catch(() => {
         res.status(500);
         next();
     });
@@ -74,10 +74,10 @@ app.get('/detail/:field', (req: express.Request, res: express.Response, next: Ne
         res.status(404)
         res.send(`field '${req.params.field}' is incorrect. options are: ${allowedFields}.`)
     } else {
-        updateDownloads().then((result) => {
+        updateDownloads().then(() => {
             res.status(200);
             res.send([...new Set(requestFilter(req).map( x => x[req.params.field]))]);
-        }).catch((err) => {
+        }).catch(() => {
             res.status(500);
             next();
         });

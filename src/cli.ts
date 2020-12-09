@@ -16,7 +16,7 @@ program
   .option('-a, --arch <arch>', 'filter to specified architecture i.e x86_64', process.env.SPLUNKRELEASES_ARCH)
   .option('-v, --version <version>', 'filter to specified version i.e 8.1.0.1', process.env.SPLUNKRELEASES_VERSION)
   .option('-f, --filetype <filetype>', 'filter to specified filetype i.e tgz', process.env.SPLUNKRELEASES_FILETYPE)
-  .option('-r, --product <product>', 'filter to specified platform (enterprise/forwarder)', process.env.SPLUNKRELEASES_PLATFORM)
+  .option('-r, --product <product>', 'filter to specified platform (enterprise/forwarder)', process.env.SPLUNKRELEASES_PRODUCT)
   .parse(process.argv)
 
 const filter = async (downloads: Download[], question: string, field: string): Promise<Download[]> => {
@@ -38,8 +38,8 @@ const filter = async (downloads: Download[], question: string, field: string): P
   return downloads
 }
 
-(async () => {
-  var downloads = await getDownloads;
+export const main = async (): Promise<void> => {
+  let downloads = await getDownloads();
   downloads = await filter(downloads, 'Choose a platform', 'platform')
   downloads = await filter(downloads, 'Choose a architecture', 'arch')
   downloads = await filter(downloads, 'Choose a version', 'version')
@@ -68,4 +68,9 @@ const filter = async (downloads: Download[], question: string, field: string): P
       result.data.pipe(outFile);
     })
   }
-})()
+}
+
+if (require.main === module) {
+  main()
+}
+

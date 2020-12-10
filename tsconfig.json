@@ -13,7 +13,6 @@
       "src/api.ts",
       "src/cli.ts",
       "src/download.ts",
-      "mocks/download.mock.ts"
     ],
     "lib": ["es2015"]
 }

@@ -1,3 +1,6 @@
+[![Jest & Codecov](https://action-badges.now.sh/KeiranY/splunk-releases?workflow%3A%22Jest+%26+Codecov%22)](https://github.com/KeiranY/splunk-releases/actions?query=workflow%3A%22Jest+%26+Codecov%22)
+[![codecov](https://codecov.io/gh/KeiranY/splunk-releases/branch/master/graph/badge.svg?token=3JZQDBJY73)](https://codecov.io/gh/KeiranY/splunk-releases)
+
 # Splunk Releases
 
 Collection of utilites for interacting with Splunk Enterprise/Universal forwarders releases.

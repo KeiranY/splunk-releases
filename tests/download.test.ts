@@ -1,4 +1,12 @@
-import { Download, getDownloads, getDownload, enterpriseCurrentReleaseURL } from '../src/download';
+import {
+  Download,
+  getDownloads,
+  getDownload,
+  enterpriseCurrentReleaseURL,
+  enterprisePreviousReleaseURL,
+  ufCurrentReleaseURL,
+  ufPreviousReleaseURL,
+} from '../src/download';
 
 describe('latest release', () => {
   let value: Download[];
@@ -46,5 +54,39 @@ describe('all releases', () => {
 
   it('has major version 8', () => {
     expect(value.map((x) => x.version.split('.')[0])).toContain('8');
+  });
+});
+
+describe('integration', () => {
+  it('Latest Enterprise Releases', (done) => {
+    getDownload(enterpriseCurrentReleaseURL, '').then((downloads) => {
+      const set = [...new Set(downloads.map((x) => x.version))];
+      expect(set.length).toBe(1);
+      done();
+    });
+  });
+
+  it('Previous Enterprise Releases', (done) => {
+    getDownload(enterprisePreviousReleaseURL, '').then((downloads) => {
+      const set = [...new Set(downloads.map((x) => x.version))];
+      expect(set.length).toBeGreaterThan(1);
+      done();
+    });
+  });
+
+  it('Latest Forwarder Releases', (done) => {
+    getDownload(ufCurrentReleaseURL, '').then((downloads) => {
+      const set = [...new Set(downloads.map((x) => x.version))];
+      expect(set.length).toBe(1);
+      done();
+    });
+  });
+
+  it('Previous Forwarder Releases', (done) => {
+    getDownload(ufPreviousReleaseURL, '').then((downloads) => {
+      const set = [...new Set(downloads.map((x) => x.version))];
+      expect(set.length).toBeGreaterThan(1);
+      done();
+    });
   });
 });

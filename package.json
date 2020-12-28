@@ -12,6 +12,14 @@
   },
   "author": "Keiran Young <k@keirany.com>",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KeiranY/splunk-releases"
+  },
+  "homepage": "https://github.com/KeiranY/splunk-releases#readme",
+  "bugs": {
+    "url": "https://github.com/KeiranY/splunk-releases/issues"
+  },
   "dependencies": {
     "axios": "^0.21.0",
     "chalk": "^4.1.0",

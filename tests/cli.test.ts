@@ -1,7 +1,11 @@
+import nock from 'nock';
+import fs from 'fs';
+import { ObjectWritableMock } from 'stream-mock';
 import inquirer, {ListQuestion} from 'inquirer';
 import { load } from '../mocks/download.mock';
 
 const platform = "Linux"
+const invalidPlatform = "fail"
 const architecture = "x86_64"
 const version = "8.1.0"
 const filetype = "tgz"
@@ -95,3 +99,36 @@ it('Questions', (done) => {
         });
     });
 })
+
+it('No matching releases', (done) => {
+    jest.isolateModules(async () => {
+        const spy = jest.spyOn(global.console, 'log').mockImplementation();
+        // Replace process.exit with a thrown error
+        const mockExit = jest.spyOn(process, 'exit').mockImplementation((code: number) => {throw new Error('Mock Exit ' + code)});
+
+        process.argv = ['node', 'cli.js', "-p", invalidPlatform];
+        // Catch error thrown by Mocked function
+        await expect(require('../src/cli').main()).rejects.toThrowError('Mock Exit 1')
+        expect(spy.mock.calls[1][0]).toBe(`No releases match platform = ${invalidPlatform}`);
+        done();
+    });
+})
+
+it('Downloads to file', (done) => {
+    jest.isolateModules(() => {
+        const mockStream = new ObjectWritableMock();
+        
+        // Mock the file being written to
+        const spy = jest.spyOn(fs, 'createWriteStream').mockImplementation((): any => mockStream)
+        // Mock the file being downloaded
+        nock(/.*/).get(/.*/).reply(200, 'Mock Data');
+
+        process.argv = ['node', 'cli.js', '-d', "-p", platform, "-a", architecture, "-v", version, "-f", filetype, "-r", product];
+        require('../src/cli').main()
+
+        mockStream.on('finish', () => {
+            expect(mockStream.data.toString()).toBe('Mock Data');
+            done();
+        })
+    });
+});

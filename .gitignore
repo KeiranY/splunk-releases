@@ -1,6 +1,7 @@
 /node_modules
 dist
 /.vscode
+/coverage
 
 # Splunk known file extensions
 *.msi

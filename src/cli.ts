@@ -24,7 +24,7 @@ const filter = async (downloads: Download[], question: string, field: string): P
     console.log(`${chalk.green('?')} ${chalk.bold(question)+':'} ${chalk.cyan(program.opts()[field])}`)
     downloads = downloads.filter(x => x[field].toLowerCase()===program.opts()[field].toLowerCase());
     if (downloads.length === 0) {
-      console.log(`No events match ${field} = ${program[field]}`)
+      console.log(`No releases match ${field} = ${program.opts()[field]}`)
       process.exit(1)
     }
   } else {

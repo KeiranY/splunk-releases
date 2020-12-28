@@ -1,3 +1,4 @@
+import http from 'http';
 import chalk from 'chalk';
 import express, { NextFunction } from 'express';
 import { ParsedQs } from 'qs';
@@ -104,7 +105,7 @@ app.get('/detail/:field', (req: express.Request, res: express.Response, next: Ne
   }
 });
 
-let server = undefined;
+let server: http.Server;
 let attempts = 0;
 const retries = process.env.SPLUNKRELEASES_APIRETRIES || 5;
 while (server === undefined && attempts < retries) {

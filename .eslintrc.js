@@ -13,5 +13,8 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended',
   ],
+  rules: {
+    'no-trailing-spaces': 'error',
+  },
   env: { node: true },
 };

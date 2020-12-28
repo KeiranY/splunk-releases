@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import express, { NextFunction } from 'express';
 import { ParsedQs } from 'qs'
 import { Download, getDownloads } from './download';
@@ -76,7 +77,7 @@ app.get('/detail/:field', (req: express.Request, res: express.Response, next: Ne
     } else {
         updateDownloads().then(() => {
             res.status(200);
-            res.send([...new Set(requestFilter(req).map( x => x[req.params.field]))]);
+            res.send([...new Set(requestFilter(req).map(x => x[req.params.field]))]);
         }).catch(() => {
             res.status(500);
             next();
@@ -84,4 +85,18 @@ app.get('/detail/:field', (req: express.Request, res: express.Response, next: Ne
     }
 })
 
-app.listen(8080);
+let server = undefined;
+let attempts = 0;
+const retries = process.env.SPLUNKRELEASES_APIRETRIES || 5;
+while(server === undefined && attempts < retries) {
+    const port = process.env.SPLUNKRELEASES_APIPORT || (Math.floor(Math.random() * 64512) + 1024);
+    console.log(`Attempting to open API server on port ${port}`);
+    try {
+        server = app.listen(port);
+        console.log(chalk.green('Success'))
+    } catch (err) {
+        if (err.code !== 'EADDRINUSE') throw err;
+        attempts++;
+        console.log(`Port in use ${chalk.red(port)}`);
+    }
+}

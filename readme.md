@@ -1,5 +1,6 @@
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/KeiranY/splunk-releases/Jest%20&%20Codecov)](https://github.com/KeiranY/splunk-releases/actions?query=workflow%3A%22Jest+%26+Codecov%22)
 [![Codecov](https://img.shields.io/codecov/c/github/KeiranY/splunk-releases)](https://codecov.io/gh/KeiranY/splunk-releases)
+[![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/KeiranY/splunk-releases)](https://www.codefactor.io/repository/github/keirany/splunk-releases)
 
 # Splunk Releases
 

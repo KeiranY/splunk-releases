@@ -1,5 +1,5 @@
-[![Jest & Codecov](https://action-badges.now.sh/KeiranY/splunk-releases?workflow%3A%22Jest+%26+Codecov%22)](https://github.com/KeiranY/splunk-releases/actions?query=workflow%3A%22Jest+%26+Codecov%22)
-[![codecov](https://codecov.io/gh/KeiranY/splunk-releases/branch/master/graph/badge.svg?token=3JZQDBJY73)](https://codecov.io/gh/KeiranY/splunk-releases)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/KeiranY/splunk-releases/Jest%20&%20Codecov)](https://github.com/KeiranY/splunk-releases/actions?query=workflow%3A%22Jest+%26+Codecov%22)
+[![Codecov](https://img.shields.io/codecov/c/github/KeiranY/splunk-releases)](https://codecov.io/gh/KeiranY/splunk-releases)
 
 # Splunk Releases
 

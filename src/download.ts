@@ -1,5 +1,5 @@
 import axios from 'axios';
-const extractRex = /data-link="(?<link>.*?)"\s+data-filename="(?<filename>.*?)"\s+data-arch="(?<arch>.*?)"\s+data-platform="(?<platform>.*?)"\s+data-oplatform="(?<oplatform>.*?)"\s+data-version="(?<version>.*?)"\s+data-md5="(?<md5>.*?)"\s+data-sha512="(?<sha512>.*?)"\s+data-thankyou="(?<thankyou>.*?)"/;
+const extractRex = /data-link="(?<link>[^"]*)"\s+data-filename="(?<filename>[^"]*)"\s+data-arch="(?<arch>[^"]*)"\s+data-platform="(?<platform>[^"]*)"\s+data-oplatform="(?<oplatform>[^"]*)"\s+data-version="(?<version>[^"]*)"\s+data-md5="(?<md5>[^"]*)"\s+data-sha512="(?<sha512>[^"]*)"\s+data-thankyou="(?<thankyou>[^"]*)"/;
 
 export const enterpriseCurrentReleaseURL =
   'https://www.splunk.com/en_us/download/get-started-with-your-free-trial.html';

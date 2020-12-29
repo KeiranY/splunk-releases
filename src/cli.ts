@@ -22,7 +22,7 @@ program
   )
   .parse(process.argv);
 
-const filter = async (downloads: Download[], question: string, field: string): Promise<void> => {
+const filter = async (downloads: Download[], question: string, field: string): Promise<Download[]> => {
   if (program.opts()[field]) {
     console.log(`${chalk.green('?')} ${chalk.bold(question) + ':'} ${chalk.cyan(program.opts()[field])}`);
     downloads = downloads.filter((x) => x[field].toLowerCase() === program.opts()[field].toLowerCase());
@@ -38,15 +38,16 @@ const filter = async (downloads: Download[], question: string, field: string): P
       downloads = downloads.filter((x) => x[field] === answer[question]);
     }
   }
+  return downloads;
 };
 
 export const main = async (): Promise<void> => {
-  const downloads = await getDownloads();
-  await filter(downloads, 'Choose a platform', 'platform');
-  await filter(downloads, 'Choose a architecture', 'arch');
-  await filter(downloads, 'Choose a version', 'version');
-  await filter(downloads, 'Choose a file type', 'filetype');
-  await filter(downloads, 'Choose a product', 'product');
+  let downloads = await getDownloads();
+  downloads = await filter(downloads, 'Choose a platform', 'platform');
+  downloads = await filter(downloads, 'Choose a architecture', 'arch');
+  downloads = await filter(downloads, 'Choose a version', 'version');
+  downloads = await filter(downloads, 'Choose a file type', 'filetype');
+  downloads = await filter(downloads, 'Choose a product', 'product');
   if (program.opts()['download']) {
     if (typeof program.opts()['download'] === 'string') {
       download(downloads[0].link, program.opts()['download']);

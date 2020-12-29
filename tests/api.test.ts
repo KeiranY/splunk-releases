@@ -1,6 +1,6 @@
 import axios from 'axios';
 import http from 'http';
-import api from '../src/api';
+import api, { _defaultLimit, _maxLimit } from '../src/api';
 
 const platform = 'Linux';
 const architecture = 'x86_64';
@@ -19,11 +19,17 @@ afterAll(() => {
 });
 
 it('returns details', (done) => {
-  axios.get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details`).then((result) => {
-    expect(result.status).toBe(200);
-    expect(typeof result.data).toBe('object');
-    expect(result.data[0]).toBeTruthy();
-    expect(result.data[0]).toHaveProperty('version');
+  axios.get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details`).then((res) => {
+    expect(res.status).toBe(200);
+    expect(typeof res.data.data).toBe('object');
+    expect(res.data).toHaveProperty('total');
+    expect(res.data).toHaveProperty('count');
+    expect(res.data).toHaveProperty('start');
+    expect(res.data).toHaveProperty('limit');
+    expect(res.data).toHaveProperty('data');
+    expect(typeof res.data.data).toBe('object');
+    expect(typeof res.data.data).not.toHaveLength(0);
+    expect(res.data.data[0]).toHaveProperty('version');
     done();
   });
 });
@@ -38,15 +44,15 @@ it('filters', (done) => {
         `&filetype=${filetype}` +
         `&product=${product}`,
     )
-    .then((result) => {
-      expect(result.status).toBe(200);
-      expect(typeof result.data).toBe('object');
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].platform).toBe(platform);
-      expect(result.data[0].arch).toBe(architecture);
-      expect(result.data[0].version).toBe(version);
-      expect(result.data[0].filetype).toBe(filetype);
-      expect(result.data[0].product).toBe(product);
+    .then((res) => {
+      expect(res.status).toBe(200);
+      expect(typeof res.data.data).toBe('object');
+      expect(res.data.data).toHaveLength(1);
+      expect(res.data.data[0].platform).toBe(platform);
+      expect(res.data.data[0].arch).toBe(architecture);
+      expect(res.data.data[0].version).toBe(version);
+      expect(res.data.data[0].filetype).toBe(filetype);
+      expect(res.data.data[0].product).toBe(product);
       done();
     });
 });
@@ -66,9 +72,9 @@ it('invalid filter value', (done) => {
 it('single field list', (done) => {
   axios.get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?field=version`).then((res) => {
     expect(res.status).toBe(200);
-    expect(typeof res.data).toBe('object');
-    expect(typeof res.data[0]).toBe('string');
-    expect(res.data).toContain(version);
+    expect(typeof res.data.data).toBe('object');
+    expect(typeof res.data.data[0]).toBe('string');
+    expect(res.data.data).toContain(version);
     done();
   });
 });
@@ -78,13 +84,13 @@ it('multiple field array', (done) => {
     .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?field=version&field=product`)
     .then((res) => {
       expect(res.status).toBe(200);
-      expect(typeof res.data).toBe('object');
-      expect(typeof res.data[0]).toBe('object');
-      expect(res.data[0]).toHaveProperty('version');
-      expect(res.data[0]).toHaveProperty('product');
-      expect(res.data[0]).not.toHaveProperty('platform');
-      expect(res.data.map((x) => x.version)).toContain(version);
-      expect(res.data.map((x) => x.product)).toContain(product);
+      expect(typeof res.data.data).toBe('object');
+      expect(typeof res.data.data[0]).toBe('object');
+      expect(res.data.data[0]).toHaveProperty('version');
+      expect(res.data.data[0]).toHaveProperty('product');
+      expect(res.data.data[0]).not.toHaveProperty('platform');
+      expect(res.data.data.map((x) => x.version)).toContain(version);
+      expect(res.data.data.map((x) => x.product)).toContain(product);
       done();
     });
 });
@@ -151,4 +157,63 @@ it("won't download multiple", (done) => {
       expect(result.data.matches[0].product).toBe(product);
       done();
     });
+});
+
+describe('pagination', () => {
+  it('has defaults', (done) => {
+    axios.get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details`).then((res) => {
+      expect(res.data.limit).toBe(_defaultLimit);
+      expect(res.data.start).toBe(0);
+      done();
+    });
+  });
+  it('accepts custom limit', (done) => {
+    axios.get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?limit=1`).then((res) => {
+      expect(res.data.limit).toBe(1);
+      expect(res.data.data).toHaveLength(1);
+      done();
+    });
+  });
+  it('has max limit', (done) => {
+    axios
+      .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?limit=${Number.MAX_SAFE_INTEGER}`)
+      .then((res) => {
+        expect(res.data.limit).toBe(_maxLimit);
+        expect(res.data.data.length).toBeLessThanOrEqual(_maxLimit);
+        done();
+      });
+  });
+  it('has custom start', (done) => {
+    axios.get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?start=1`).then((res) => {
+      expect(res.data.start).toBe(1);
+      axios.get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details`).then((res2) => {
+        expect(res.data.data[0]).toEqual(res2.data.data[1]);
+        done();
+      });
+    });
+  });
+  it('returns correct result count', (done) => {
+    axios.get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details`).then((res) => {
+      expect(res.data.data).toHaveLength(res.data.count);
+      done();
+    });
+  });
+  it('rejects invalid start param', (done) => {
+    axios
+      .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?start=a`, { validateStatus: () => true })
+      .then((res) => {
+        expect(res.status).toBe(400);
+        expect(res.data).toBe(`invalid value for query parameter 'start': a`);
+        done();
+      });
+  });
+  it('rejects invalid limit param', (done) => {
+    axios
+      .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?limit=a`, { validateStatus: () => true })
+      .then((res) => {
+        expect(res.status).toBe(400);
+        expect(res.data).toBe(`invalid value for query parameter 'limit': a`);
+        done();
+      });
+  });
 });

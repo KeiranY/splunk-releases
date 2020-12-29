@@ -3,7 +3,6 @@ import chalk from 'chalk';
 import express, { NextFunction } from 'express';
 import { ParsedQs } from 'qs';
 import { Download, getDownloads } from './download';
-import pick from 'object.pick';
 
 const app = express();
 let downloads: Download[];
@@ -43,26 +42,27 @@ const requestFilter = (req: express.Request & { query: ParsedQs }): Download[] =
   );
 };
 
-const fieldFilter = (download: Download[], field: any): any[] => {
-  let ret = download as any[];
+const fieldFilter = (download: Download[], field: string | string[]): Download[] => {
+  let ret = download;
   if (typeof field === 'string') {
+    // If only one field is needed we can use map
     ret = ret.map((x) => x[field]);
   } else {
-    const fields = field as string[];
     ret = ret.map((item) =>
-      fields.reduce((arr, field) => {
+      // Use reduce to build a new object with only the selected fields
+      field.reduce((arr, field) => {
         if (item[field] !== undefined) arr[field] = item[field];
         return arr;
       }, {}),
-    );
+    ) as Download[];
   }
-  ret = [...new Set(ret)];
-  return ret;
+  // Return a set to remove duplicates
+  return [...new Set(ret)];
 };
 
 app.get('/download', (req: express.Request, res: express.Response, next: NextFunction): void => {
   updateDownloads()
-    .then((result) => {
+    .then(() => {
       const download = [...new Set(requestFilter(req))];
       if (download.length > 1) {
         const response = Object();
@@ -76,7 +76,7 @@ app.get('/download', (req: express.Request, res: express.Response, next: NextFun
         res.send(`303 see other ${download[0].link}`);
       }
     })
-    .catch((err) => {
+    .catch(() => {
       res.status(500);
       next();
     });
@@ -84,24 +84,32 @@ app.get('/download', (req: express.Request, res: express.Response, next: NextFun
 
 app.get('/details', (req: express.Request, res: express.Response, next: NextFunction): void => {
   updateDownloads()
-    .then((result) => {
+    .then(() => {
       res.status(200);
       let ret = [...new Set(requestFilter(req))];
       if (ret.length === 0) {
         res.status(404);
-        res.send(`no results found`);
+        res.send('no results found');
         return;
       }
-
-      if (req.query.field) ret = fieldFilter(ret, req.query.field);
-      if (ret[0] === undefined) {
-        res.status(404);
-        res.send(`field '${req.query.field}' is incorrect. supported options are: ${allowedFields}.`);
-        return;
+      // If a list of fields to return was supplied
+      if (req.query.field) {
+        const fields: string[] =
+          typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
+        // Check that each field is valid
+        for (let i = 0; i < fields.length; i++) {
+          if (!allowedFields.includes(fields[i])) {
+            res.status(400);
+            res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
+            return;
+          }
+        }
+        // Filter to requested fields
+        ret = fieldFilter(ret, req.query.field as string | string[]);
       }
       res.send(ret);
     })
-    .catch((err) => {
+    .catch(() => {
       res.status(500);
       next();
     });
@@ -118,23 +126,8 @@ const allowedFields = [
   'sha512',
   'thankyou',
   'version',
+  'product',
 ];
-app.get('/detail/:field', (req: express.Request, res: express.Response, next: NextFunction): void => {
-  if (!allowedFields.includes(req.params.field)) {
-    res.status(404);
-    res.send(`field '${req.params.field}' is incorrect. options are: ${allowedFields}.`);
-  } else {
-    updateDownloads()
-      .then(() => {
-        res.status(200);
-        res.send([...new Set(requestFilter(req).map((x) => x[req.params.field]))]);
-      })
-      .catch(() => {
-        res.status(500);
-        next();
-      });
-  }
-});
 
 let server: http.Server;
 let attempts = 0;

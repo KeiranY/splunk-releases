@@ -73,9 +73,9 @@ const allowedFields = [
 ];
 
 export const _defaultLimit = 10;
-const defaultLimit = parseInt(process.env.SPLUNKRELEASES_API_DEFAULT_LIMIT) || _defaultLimit;
+const defaultLimit = parseInt(process.env.SPLUNKRELEASES_API_DEFAULT_LIMIT, 10) || _defaultLimit;
 export const _maxLimit = 100;
-const maxLimit = parseInt(process.env.SPLUNKRELEASES_API_MAX_LIMIT) || _maxLimit;
+const maxLimit = parseInt(process.env.SPLUNKRELEASES_API_MAX_LIMIT, 10) || _maxLimit;
 
 const run = (): http.Server => {
   const app = express();
@@ -130,7 +130,7 @@ const run = (): http.Server => {
         // Pagination
         let start = 0;
         if (req.query.start) {
-          start = parseInt(req.query.start.toString());
+          start = parseInt(req.query.start.toString(), 10);
           if (isNaN(start)) {
             res.status(400);
             res.send(`invalid value for query parameter 'start': ${req.query.start.toString()}`);
@@ -139,7 +139,7 @@ const run = (): http.Server => {
         }
         let limit = defaultLimit;
         if (req.query.limit) {
-          limit = parseInt(req.query.limit.toString());
+          limit = parseInt(req.query.limit.toString(), 10);
           if (isNaN(limit)) {
             res.status(400);
             res.send(`invalid value for query parameter 'limit': ${req.query.limit.toString()}`);

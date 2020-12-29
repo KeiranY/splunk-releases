@@ -122,7 +122,34 @@ const run = (): http.Server => {
           // Filter to requested fields
           ret = fieldFilter(ret, req.query.field as string | string[]);
         }
-        res.send(ret);
+        // WIP: Pagination
+        let start = 0;
+        if (req.query.start) {
+          start = parseInt(req.query.start.toString());
+          if (isNaN(start)) {
+            res.status(400);
+            res.send(`invalid value for query parameter 'start': ${req.query.start.toString()}`);
+            return;
+          }
+        }
+        // TODO: have this "default limit" as a const as opposed to a magic number
+        let limit = 10;
+        if (req.query.limit) {
+          limit = parseInt(req.query.limit.toString());
+          if (isNaN(limit)) {
+            res.status(400);
+            res.send(`invalid value for query parameter 'limit': ${req.query.limit.toString()}`);
+            return;
+          }
+          // TODO: have this "hard limit" as a const as opposed to a magic number
+          limit = Math.min(limit, 100);
+        }
+        res.send({
+          total: ret.length,
+          start: start,
+          limit: limit,
+          data: ret.slice(start, start + limit),
+        });
       })
       .catch(() => {
         res.status(500);

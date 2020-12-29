@@ -42,6 +42,24 @@ const requestFilter = (req: express.Request & { query: ParsedQs }): Download[] =
   );
 };
 
+const fieldFilter = (download: Download[], field: string | string[]): Download[] => {
+  let ret = download;
+  if (typeof field === 'string') {
+    // If only one field is needed we can use map
+    ret = ret.map((x) => x[field]);
+  } else {
+    ret = ret.map((item) =>
+      // Use reduce to build a new object with only the selected fields
+      field.reduce((arr, field) => {
+        if (item[field] !== undefined) arr[field] = item[field];
+        return arr;
+      }, {}),
+    ) as Download[];
+  }
+  // Return a set to remove duplicates
+  return [...new Set(ret)];
+};
+
 app.get('/download', (req: express.Request, res: express.Response, next: NextFunction): void => {
   updateDownloads()
     .then(() => {
@@ -68,7 +86,28 @@ app.get('/details', (req: express.Request, res: express.Response, next: NextFunc
   updateDownloads()
     .then(() => {
       res.status(200);
-      res.send([...new Set(requestFilter(req))]);
+      let ret = [...new Set(requestFilter(req))];
+      if (ret.length === 0) {
+        res.status(404);
+        res.send('no results found');
+        return;
+      }
+      // If a list of fields to return was supplied
+      if (req.query.field) {
+        const fields: string[] =
+          typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
+        // Check that each field is valid
+        for (let i = 0; i < fields.length; i++) {
+          if (!allowedFields.includes(fields[i])) {
+            res.status(400);
+            res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
+            return;
+          }
+        }
+        // Filter to requested fields
+        ret = fieldFilter(ret, req.query.field as string | string[]);
+      }
+      res.send(ret);
     })
     .catch(() => {
       res.status(500);
@@ -87,23 +126,8 @@ const allowedFields = [
   'sha512',
   'thankyou',
   'version',
+  'product',
 ];
-app.get('/detail/:field', (req: express.Request, res: express.Response, next: NextFunction): void => {
-  if (!allowedFields.includes(req.params.field)) {
-    res.status(404);
-    res.send(`field '${req.params.field}' is incorrect. options are: ${allowedFields}.`);
-  } else {
-    updateDownloads()
-      .then(() => {
-        res.status(200);
-        res.send([...new Set(requestFilter(req).map((x) => x[req.params.field]))]);
-      })
-      .catch(() => {
-        res.status(500);
-        next();
-      });
-  }
-});
 
 let server: http.Server;
 let attempts = 0;

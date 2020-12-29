@@ -70,81 +70,76 @@ const defaultLimit = parseInt(process.env.SPLUNKRELEASES_API_DEFAULT_LIMIT, 10) 
 export const _maxLimit = 100;
 const maxLimit = parseInt(process.env.SPLUNKRELEASES_API_MAX_LIMIT, 10) || _maxLimit;
 
-const downloadReq = (req: express.Request, res: express.Response, next: NextFunction): void => {
-  updateDownloads()
-    .then(() => {
-      const download = [...new Set(requestFilter(req))];
-      if (download.length > 1) {
-        const response = Object();
-        response.error = 'more than one download matches the filter supplied.';
-        response.matches = download;
-        res.status(400);
-        res.send(response);
-      } else {
-        res.status(303);
-        res.location(download[0].link);
-        res.send(`303 see other ${download[0].link}`);
-      }
-    })
-    .catch(() => {
-      res.status(500);
-      next();
-    });
+const downloadReq = (req: express.Request, res: express.Response): void => {
+  if (res.locals.downloads.length > 1) {
+    const response = Object();
+    response.error = 'more than one download matches the filter supplied.';
+    response.matches = res.locals.downloads;
+    res.status(400);
+    res.send(response);
+  } else {
+    res.status(303);
+    res.location(res.locals.downloads[0].link);
+    res.send(`303 see other ${res.locals.downloads[0].link}`);
+  }
 };
 
-const detailsReq = (req: express.Request, res: express.Response, next: NextFunction): void => {
+const parseIntMiddleware = (name: string) => {
+  return (req: express.Request, res: express.Response, next: NextFunction): void => {
+    if (req.query[name]) {
+      res.locals[name] = parseInt(req.query[name].toString(), 10);
+      if (isNaN(res.locals[name])) {
+        res.status(400);
+        res.send(`invalid value for query parameter '${name}': ${req.query[name].toString()}`);
+        return;
+      }
+    }
+    next();
+  };
+};
+
+const detailsReq = (req: express.Request, res: express.Response): void => {
+  const start = res.locals.start || 0;
+  const limit = Math.min(res.locals.limit || defaultLimit, maxLimit);
+  const slice = res.locals.downloads.slice(start, start + limit);
+  res.status(200);
+  res.send({
+    total: res.locals.downloads.length,
+    count: slice.length,
+    start: start,
+    limit: limit,
+    data: slice,
+  });
+};
+
+const fieldsMiddleware = (req: express.Request, res: express.Response, next: NextFunction): void => {
+  // If a list of fields to return was supplied
+  if (req.query.field) {
+    const fields: string[] = typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
+    // Check that each field is valid
+    for (let i = 0; i < fields.length; i++) {
+      if (!allowedFields.includes(fields[i])) {
+        res.status(400);
+        res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
+        return;
+      }
+    }
+    // Filter to requested fields
+    res.locals.downloads = fieldFilter(res.locals.downloads, req.query.field as string | string[]);
+  }
+  next();
+};
+
+const filterMiddleware = (req: express.Request, res: express.Response, next: NextFunction): void => {
   updateDownloads()
     .then(() => {
-      let ret = [...new Set(requestFilter(req))];
-      if (ret.length === 0) {
+      res.locals.downloads = [...new Set(requestFilter(req))];
+      if (res.locals.downloads.length === 0) {
         res.status(404);
         res.send('no results found');
         return;
       }
-      // If a list of fields to return was supplied
-      if (req.query.field) {
-        const fields: string[] =
-          typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
-        // Check that each field is valid
-        for (let i = 0; i < fields.length; i++) {
-          if (!allowedFields.includes(fields[i])) {
-            res.status(400);
-            res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
-            return;
-          }
-        }
-        // Filter to requested fields
-        ret = fieldFilter(ret, req.query.field as string | string[]);
-      }
-      // Pagination
-      let start = 0;
-      if (req.query.start) {
-        start = parseInt(req.query.start.toString(), 10);
-        if (isNaN(start)) {
-          res.status(400);
-          res.send(`invalid value for query parameter 'start': ${req.query.start.toString()}`);
-          return;
-        }
-      }
-      let limit = defaultLimit;
-      if (req.query.limit) {
-        limit = parseInt(req.query.limit.toString(), 10);
-        if (isNaN(limit)) {
-          res.status(400);
-          res.send(`invalid value for query parameter 'limit': ${req.query.limit.toString()}`);
-          return;
-        }
-        limit = Math.min(limit, maxLimit);
-      }
-      const slice = ret.slice(start, start + limit);
-      res.status(200);
-      res.send({
-        total: ret.length,
-        count: slice.length,
-        start: start,
-        limit: limit,
-        data: slice,
-      });
+      next();
     })
     .catch(() => {
       res.status(500);
@@ -154,11 +149,15 @@ const detailsReq = (req: express.Request, res: express.Response, next: NextFunct
 
 const run = (): http.Server => {
   const app = express();
-
-  app.get('/download', downloadReq);
-
-  app.get('/details', detailsReq);
-
+  app.get('/download', filterMiddleware, downloadReq);
+  app.get(
+    '/details',
+    filterMiddleware,
+    fieldsMiddleware,
+    parseIntMiddleware('start'),
+    parseIntMiddleware('limit'),
+    detailsReq,
+  );
   let server: http.Server;
   let attempts = 0;
   const retries = process.env.SPLUNKRELEASES_APIRETRIES || 5;

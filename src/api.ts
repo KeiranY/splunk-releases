@@ -72,6 +72,11 @@ const allowedFields = [
   'product',
 ];
 
+export const _defaultLimit = 10;
+const defaultLimit = parseInt(process.env.SPLUNKRELEASES_API_DEFAULT_LIMIT) || _defaultLimit;
+export const _maxLimit = 100;
+const maxLimit = parseInt(process.env.SPLUNKRELEASES_API_MAX_LIMIT) || _maxLimit;
+
 const run = (): http.Server => {
   const app = express();
 
@@ -122,7 +127,7 @@ const run = (): http.Server => {
           // Filter to requested fields
           ret = fieldFilter(ret, req.query.field as string | string[]);
         }
-        // WIP: Pagination
+        // Pagination
         let start = 0;
         if (req.query.start) {
           start = parseInt(req.query.start.toString());
@@ -132,8 +137,7 @@ const run = (): http.Server => {
             return;
           }
         }
-        // TODO: have this "default limit" as a const as opposed to a magic number
-        let limit = 10;
+        let limit = defaultLimit;
         if (req.query.limit) {
           limit = parseInt(req.query.limit.toString());
           if (isNaN(limit)) {
@@ -141,10 +145,9 @@ const run = (): http.Server => {
             res.send(`invalid value for query parameter 'limit': ${req.query.limit.toString()}`);
             return;
           }
-          // TODO: have this "hard limit" as a const as opposed to a magic number
-          limit = Math.min(limit, 100);
+          limit = Math.min(limit, maxLimit);
         }
-        const slice = ret.slice(start, start + limit)
+        const slice = ret.slice(start, start + limit);
         res.send({
           total: ret.length,
           count: slice.length,

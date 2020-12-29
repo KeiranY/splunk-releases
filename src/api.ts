@@ -58,19 +58,7 @@ const fieldFilter = (download: Download[], field: string | string[]): Download[]
   return [...new Set(ret)];
 };
 
-const allowedFields = [
-  'arch',
-  'link',
-  'filename',
-  'filetype',
-  'md5',
-  'oplatform',
-  'platform',
-  'sha512',
-  'thankyou',
-  'version',
-  'product',
-];
+const allowedFields = ['arch', 'link', 'filename', 'filetype', 'md5', 'platform', 'sha512', 'version', 'product'];
 
 const run = (): http.Server => {
   const app = express();

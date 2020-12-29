@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import express, { NextFunction } from 'express';
 import { ParsedQs } from 'qs';
 import { Download, getDownloads } from './download';
+import { down } from 'inquirer/lib/utils/readline';
 
 let downloads: Download[];
 const updateDownloads = (force = false) => {
@@ -29,15 +30,19 @@ const versionMatch = (query: string, release: string): boolean => {
     .reduce((r, x) => r && x);
 };
 
-const requestFilter = (req: express.Request & { query: ParsedQs }): Download[] => {
+const stringMatch = (req: express.Request & { query: ParsedQs }, field: string, downloads: Download[]) => {
   return downloads.filter(
-    (x) =>
-      (!req.query.platform || req.query.platform.toString().toLowerCase() === x.platform.toLowerCase()) &&
-      (!req.query.arch || req.query.arch.toString().toLowerCase() === x.arch.toLowerCase()) &&
-      (!req.query.version || versionMatch(req.query.version.toString(), x.version)) &&
-      (!req.query.filetype || req.query.filetype.toString().toLocaleLowerCase() === x.filetype) &&
-      (!req.query.product || req.query.product.toString().toLowerCase() === x.product.toLowerCase()),
+    (x) => !req.query[field] || req.query[field].toString().toLowerCase() === x[field].toLowerCase(),
   );
+};
+
+const requestFilter = (req: express.Request & { query: ParsedQs }): Download[] => {
+  let ret = stringMatch(req, 'platform', downloads);
+  ret = stringMatch(req, 'arch', ret);
+  ret = stringMatch(req, 'filetype', ret);
+  ret = stringMatch(req, 'product', ret);
+  ret = ret.filter((x) => !req.query.version || versionMatch(req.query.version.toString(), x.version));
+  return ret;
 };
 
 const fieldFilter = (download: Download[], field: string | string[]): Download[] => {
@@ -65,90 +70,94 @@ const defaultLimit = parseInt(process.env.SPLUNKRELEASES_API_DEFAULT_LIMIT, 10) 
 export const _maxLimit = 100;
 const maxLimit = parseInt(process.env.SPLUNKRELEASES_API_MAX_LIMIT, 10) || _maxLimit;
 
+const downloadReq = (req: express.Request, res: express.Response, next: NextFunction): void => {
+  updateDownloads()
+    .then(() => {
+      const download = [...new Set(requestFilter(req))];
+      if (download.length > 1) {
+        const response = Object();
+        response.error = 'more than one download matches the filter supplied.';
+        response.matches = download;
+        res.status(400);
+        res.send(response);
+      } else {
+        res.status(303);
+        res.location(download[0].link);
+        res.send(`303 see other ${download[0].link}`);
+      }
+    })
+    .catch(() => {
+      res.status(500);
+      next();
+    });
+};
+
+const detailsReq = (req: express.Request, res: express.Response, next: NextFunction): void => {
+  updateDownloads()
+    .then(() => {
+      let ret = [...new Set(requestFilter(req))];
+      if (ret.length === 0) {
+        res.status(404);
+        res.send('no results found');
+        return;
+      }
+      // If a list of fields to return was supplied
+      if (req.query.field) {
+        const fields: string[] =
+          typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
+        // Check that each field is valid
+        for (let i = 0; i < fields.length; i++) {
+          if (!allowedFields.includes(fields[i])) {
+            res.status(400);
+            res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
+            return;
+          }
+        }
+        // Filter to requested fields
+        ret = fieldFilter(ret, req.query.field as string | string[]);
+      }
+      // Pagination
+      let start = 0;
+      if (req.query.start) {
+        start = parseInt(req.query.start.toString(), 10);
+        if (isNaN(start)) {
+          res.status(400);
+          res.send(`invalid value for query parameter 'start': ${req.query.start.toString()}`);
+          return;
+        }
+      }
+      let limit = defaultLimit;
+      if (req.query.limit) {
+        limit = parseInt(req.query.limit.toString(), 10);
+        if (isNaN(limit)) {
+          res.status(400);
+          res.send(`invalid value for query parameter 'limit': ${req.query.limit.toString()}`);
+          return;
+        }
+        limit = Math.min(limit, maxLimit);
+      }
+      const slice = ret.slice(start, start + limit);
+      res.status(200);
+      res.send({
+        total: ret.length,
+        count: slice.length,
+        start: start,
+        limit: limit,
+        data: slice,
+      });
+    })
+    .catch(() => {
+      res.status(500);
+      next();
+    });
+};
+
 const run = (): http.Server => {
   const app = express();
 
-  app.get('/download', (req: express.Request, res: express.Response, next: NextFunction): void => {
-    updateDownloads()
-      .then(() => {
-        const download = [...new Set(requestFilter(req))];
-        if (download.length > 1) {
-          const response = Object();
-          response.error = 'more than one download matches the filter supplied.';
-          response.matches = download;
-          res.status(400);
-          res.send(response);
-        } else {
-          res.status(303);
-          res.location(download[0].link);
-          res.send(`303 see other ${download[0].link}`);
-        }
-      })
-      .catch(() => {
-        res.status(500);
-        next();
-      });
-  });
+  app.get('/download', downloadReq);
 
-  app.get('/details', (req: express.Request, res: express.Response, next: NextFunction): void => {
-    updateDownloads()
-      .then(() => {
-        res.status(200);
-        let ret = [...new Set(requestFilter(req))];
-        if (ret.length === 0) {
-          res.status(404);
-          res.send('no results found');
-          return;
-        }
-        // If a list of fields to return was supplied
-        if (req.query.field) {
-          const fields: string[] =
-            typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
-          // Check that each field is valid
-          for (let i = 0; i < fields.length; i++) {
-            if (!allowedFields.includes(fields[i])) {
-              res.status(400);
-              res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
-              return;
-            }
-          }
-          // Filter to requested fields
-          ret = fieldFilter(ret, req.query.field as string | string[]);
-        }
-        // Pagination
-        let start = 0;
-        if (req.query.start) {
-          start = parseInt(req.query.start.toString(), 10);
-          if (isNaN(start)) {
-            res.status(400);
-            res.send(`invalid value for query parameter 'start': ${req.query.start.toString()}`);
-            return;
-          }
-        }
-        let limit = defaultLimit;
-        if (req.query.limit) {
-          limit = parseInt(req.query.limit.toString(), 10);
-          if (isNaN(limit)) {
-            res.status(400);
-            res.send(`invalid value for query parameter 'limit': ${req.query.limit.toString()}`);
-            return;
-          }
-          limit = Math.min(limit, maxLimit);
-        }
-        const slice = ret.slice(start, start + limit);
-        res.send({
-          total: ret.length,
-          count: slice.length,
-          start: start,
-          limit: limit,
-          data: slice,
-        });
-      })
-      .catch(() => {
-        res.status(500);
-        next();
-      });
-  });
+  app.get('/details', detailsReq);
 
   let server: http.Server;
   let attempts = 0;
@@ -165,7 +174,6 @@ const run = (): http.Server => {
       console.log(`Port in use ${chalk.red(port)}`);
     }
   }
-
   return server;
 };
 

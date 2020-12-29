@@ -144,11 +144,13 @@ const run = (): http.Server => {
           // TODO: have this "hard limit" as a const as opposed to a magic number
           limit = Math.min(limit, 100);
         }
+        const slice = ret.slice(start, start + limit)
         res.send({
           total: ret.length,
+          count: slice.length,
           start: start,
           limit: limit,
-          data: ret.slice(start, start + limit),
+          data: slice,
         });
       })
       .catch(() => {

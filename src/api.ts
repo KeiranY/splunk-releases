@@ -60,6 +60,11 @@ const fieldFilter = (download: Download[], field: string | string[]): Download[]
 
 const allowedFields = ['arch', 'link', 'filename', 'filetype', 'md5', 'platform', 'sha512', 'version', 'product'];
 
+export const _defaultLimit = 10;
+const defaultLimit = parseInt(process.env.SPLUNKRELEASES_API_DEFAULT_LIMIT, 10) || _defaultLimit;
+export const _maxLimit = 100;
+const maxLimit = parseInt(process.env.SPLUNKRELEASES_API_MAX_LIMIT, 10) || _maxLimit;
+
 const run = (): http.Server => {
   const app = express();
 
@@ -110,7 +115,34 @@ const run = (): http.Server => {
           // Filter to requested fields
           ret = fieldFilter(ret, req.query.field as string | string[]);
         }
-        res.send(ret);
+        // Pagination
+        let start = 0;
+        if (req.query.start) {
+          start = parseInt(req.query.start.toString(), 10);
+          if (isNaN(start)) {
+            res.status(400);
+            res.send(`invalid value for query parameter 'start': ${req.query.start.toString()}`);
+            return;
+          }
+        }
+        let limit = defaultLimit;
+        if (req.query.limit) {
+          limit = parseInt(req.query.limit.toString(), 10);
+          if (isNaN(limit)) {
+            res.status(400);
+            res.send(`invalid value for query parameter 'limit': ${req.query.limit.toString()}`);
+            return;
+          }
+          limit = Math.min(limit, maxLimit);
+        }
+        const slice = ret.slice(start, start + limit);
+        res.send({
+          total: ret.length,
+          count: slice.length,
+          start: start,
+          limit: limit,
+          data: slice,
+        });
       })
       .catch(() => {
         res.status(500);

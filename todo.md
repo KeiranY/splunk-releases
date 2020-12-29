@@ -8,6 +8,7 @@
 - [ ] test(api): pagination env variable test
 - [ ] feat(api): add status codes and consistent error messages
 - [ ] feat(cli): calculate md5/sha digest with [digest-stream](https://github.com/jeffbski/digest-stream) and output results when downloading.
+- [ ] test(api): pagination env variable test
 
 
 Format: *type*(*scope*): *description*

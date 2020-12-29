@@ -1,14 +1,21 @@
 import axios from 'axios';
+import http from 'http';
+import api from '../src/api';
 
 const platform = 'Linux';
 const architecture = 'x86_64';
 const version = '8.1.0';
 const filetype = 'tgz';
 const product = 'enterprise';
+let server: http.Server;
 
 beforeAll(() => {
   process.env.SPLUNKRELEASES_APIPORT = (Math.floor(Math.random() * 64512) + 1024).toString();
-  require('../src/api');
+  server = api();
+});
+
+afterAll(() => {
+  server.close();
 });
 
 it('returns details', (done) => {

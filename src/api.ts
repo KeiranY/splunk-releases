@@ -4,9 +4,7 @@ import express, { NextFunction } from 'express';
 import { ParsedQs } from 'qs';
 import { Download, getDownloads } from './download';
 
-const app = express();
 let downloads: Download[];
-
 const updateDownloads = (force = false) => {
   return new Promise<void>((resolve, reject) => {
     if (!downloads || force) {
@@ -60,61 +58,6 @@ const fieldFilter = (download: Download[], field: string | string[]): Download[]
   return [...new Set(ret)];
 };
 
-app.get('/download', (req: express.Request, res: express.Response, next: NextFunction): void => {
-  updateDownloads()
-    .then(() => {
-      const download = [...new Set(requestFilter(req))];
-      if (download.length > 1) {
-        const response = Object();
-        response.error = 'more than one download matches the filter supplied.';
-        response.matches = download;
-        res.status(400);
-        res.send(response);
-      } else {
-        res.status(303);
-        res.location(download[0].link);
-        res.send(`303 see other ${download[0].link}`);
-      }
-    })
-    .catch(() => {
-      res.status(500);
-      next();
-    });
-});
-
-app.get('/details', (req: express.Request, res: express.Response, next: NextFunction): void => {
-  updateDownloads()
-    .then(() => {
-      res.status(200);
-      let ret = [...new Set(requestFilter(req))];
-      if (ret.length === 0) {
-        res.status(404);
-        res.send('no results found');
-        return;
-      }
-      // If a list of fields to return was supplied
-      if (req.query.field) {
-        const fields: string[] =
-          typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
-        // Check that each field is valid
-        for (let i = 0; i < fields.length; i++) {
-          if (!allowedFields.includes(fields[i])) {
-            res.status(400);
-            res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
-            return;
-          }
-        }
-        // Filter to requested fields
-        ret = fieldFilter(ret, req.query.field as string | string[]);
-      }
-      res.send(ret);
-    })
-    .catch(() => {
-      res.status(500);
-      next();
-    });
-});
-
 const allowedFields = [
   'arch',
   'link',
@@ -129,18 +72,85 @@ const allowedFields = [
   'product',
 ];
 
-let server: http.Server;
-let attempts = 0;
-const retries = process.env.SPLUNKRELEASES_APIRETRIES || 5;
-while (server === undefined && attempts < retries) {
-  const port = process.env.SPLUNKRELEASES_APIPORT || Math.floor(Math.random() * 64512) + 1024;
-  console.log(`Attempting to open API server on port ${port}`);
-  try {
-    server = app.listen(port);
-    console.log(chalk.green('Success'));
-  } catch (err) {
-    if (err.code !== 'EADDRINUSE') throw err;
-    attempts++;
-    console.log(`Port in use ${chalk.red(port)}`);
+const run = (): http.Server => {
+  const app = express();
+
+  app.get('/download', (req: express.Request, res: express.Response, next: NextFunction): void => {
+    updateDownloads()
+      .then(() => {
+        const download = [...new Set(requestFilter(req))];
+        if (download.length > 1) {
+          const response = Object();
+          response.error = 'more than one download matches the filter supplied.';
+          response.matches = download;
+          res.status(400);
+          res.send(response);
+        } else {
+          res.status(303);
+          res.location(download[0].link);
+          res.send(`303 see other ${download[0].link}`);
+        }
+      })
+      .catch(() => {
+        res.status(500);
+        next();
+      });
+  });
+
+  app.get('/details', (req: express.Request, res: express.Response, next: NextFunction): void => {
+    updateDownloads()
+      .then(() => {
+        res.status(200);
+        let ret = [...new Set(requestFilter(req))];
+        if (ret.length === 0) {
+          res.status(404);
+          res.send('no results found');
+          return;
+        }
+        // If a list of fields to return was supplied
+        if (req.query.field) {
+          const fields: string[] =
+            typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
+          // Check that each field is valid
+          for (let i = 0; i < fields.length; i++) {
+            if (!allowedFields.includes(fields[i])) {
+              res.status(400);
+              res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
+              return;
+            }
+          }
+          // Filter to requested fields
+          ret = fieldFilter(ret, req.query.field as string | string[]);
+        }
+        res.send(ret);
+      })
+      .catch(() => {
+        res.status(500);
+        next();
+      });
+  });
+
+  let server: http.Server;
+  let attempts = 0;
+  const retries = process.env.SPLUNKRELEASES_APIRETRIES || 5;
+  while (server === undefined && attempts < retries) {
+    const port = process.env.SPLUNKRELEASES_APIPORT || Math.floor(Math.random() * 64512) + 1024;
+    console.log(`Attempting to open API server on port ${port}`);
+    try {
+      server = app.listen(port);
+      console.log(chalk.green('Success'));
+    } catch (err) {
+      if (err.code !== 'EADDRINUSE') throw err;
+      attempts++;
+      console.log(`Port in use ${chalk.red(port)}`);
+    }
   }
+
+  return server;
+};
+
+export default run;
+
+if (require.main === module) {
+  run();
 }

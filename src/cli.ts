@@ -22,7 +22,7 @@ program
   )
   .parse(process.argv);
 
-const filter = async (downloads: Download[], question: string, field: string): Promise<Download[]> => {
+const filter = async (downloads: Download[], question: string, field: string): Promise<void> => {
   if (program.opts()[field]) {
     console.log(`${chalk.green('?')} ${chalk.bold(question) + ':'} ${chalk.cyan(program.opts()[field])}`);
     downloads = downloads.filter((x) => x[field].toLowerCase() === program.opts()[field].toLowerCase());
@@ -38,43 +38,47 @@ const filter = async (downloads: Download[], question: string, field: string): P
       downloads = downloads.filter((x) => x[field] === answer[question]);
     }
   }
-  return downloads;
 };
 
 export const main = async (): Promise<void> => {
-  let downloads = await getDownloads();
-  downloads = await filter(downloads, 'Choose a platform', 'platform');
-  downloads = await filter(downloads, 'Choose a architecture', 'arch');
-  downloads = await filter(downloads, 'Choose a version', 'version');
-  downloads = await filter(downloads, 'Choose a file type', 'filetype');
-  downloads = await filter(downloads, 'Choose a product', 'product');
-  console.log(chalk.bold('Link: ') + chalk.underline(downloads[0].link));
+  const downloads = await getDownloads();
+  await filter(downloads, 'Choose a platform', 'platform');
+  await filter(downloads, 'Choose a architecture', 'arch');
+  await filter(downloads, 'Choose a version', 'version');
+  await filter(downloads, 'Choose a file type', 'filetype');
+  await filter(downloads, 'Choose a product', 'product');
   if (program.opts()['download']) {
-    const outFile = fs.createWriteStream(
-      typeof program.opts()['download'] === 'string' ? program.opts()['download'] : downloads[0].filename,
-    );
-    const bar = new cliProgress.SingleBar({
-      format: `${chalk.green(downloads[0].filename)} ${chalk.cyan(
-        '{bar}',
-      )} | {percentage}% | {value}/{total}  | ETA: {eta}s`,
-      barCompleteChar: '\u2588',
-      barIncompleteChar: '\u2591',
-      hideCursor: true,
-    });
-    axios({
-      url: downloads[0].link,
-      method: 'GET',
-      responseType: 'stream',
-    }).then((result: AxiosResponse<http.ServerResponse>) => {
-      bar.start(result.headers['content-length'], 0);
-      result.data.on('data', (chunk) => bar.increment(chunk.length));
-      result.data.on('close', () => {
-        bar.stop();
-        console.log(chalk.bold('Downloaded to: ') + chalk.underline(outFile.path));
-      });
-      result.data.pipe(outFile);
-    });
+    if (typeof program.opts()['download'] === 'string') {
+      download(downloads[0].link, program.opts()['download']);
+    } else {
+      download(downloads[0].link, downloads[0].filename);
+    }
+  } else {
+    console.log(chalk.bold('Link: ') + chalk.underline(downloads[0].link));
   }
+};
+
+const download = (link: string, filename: string) => {
+  const outFile = fs.createWriteStream(filename);
+  const bar = new cliProgress.SingleBar({
+    format: `${chalk.green(filename)} ${chalk.cyan('{bar}')} | {percentage}% | {value}/{total}  | ETA: {eta}s`,
+    barCompleteChar: '\u2588',
+    barIncompleteChar: '\u2591',
+    hideCursor: true,
+  });
+  axios({
+    url: link,
+    method: 'GET',
+    responseType: 'stream',
+  }).then((result: AxiosResponse<http.ServerResponse>) => {
+    bar.start(result.headers['content-length'], 0);
+    result.data.on('data', (chunk) => bar.increment(chunk.length));
+    result.data.on('close', () => {
+      bar.stop();
+      console.log(chalk.bold('Downloaded to: ') + chalk.underline(outFile.path));
+    });
+    result.data.pipe(outFile);
+  });
 };
 
 if (require.main === module) {

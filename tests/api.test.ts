@@ -95,6 +95,7 @@ it('multiple field array', (done) => {
       expect(res.data.data[0]).not.toHaveProperty('platform');
       expect(res.data.data.map((x) => x.version)).toContain(version);
       expect(res.data.data.map((x) => x.product)).toContain(product);
+      expect(res.data.data).toHaveLength(new Set(res.data.data.map((d) => JSON.stringify(d))).size);
       done();
     });
 });

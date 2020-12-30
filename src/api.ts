@@ -3,7 +3,6 @@ import chalk from 'chalk';
 import express, { NextFunction } from 'express';
 import { ParsedQs } from 'qs';
 import { Download, getDownloads } from './download';
-import { down } from 'inquirer/lib/utils/readline';
 
 let downloads: Download[];
 const updateDownloads = (force = false) => {
@@ -60,7 +59,7 @@ const fieldFilter = (download: Download[], field: string | string[]): Download[]
     ) as Download[];
   }
   // Return a set to remove duplicates
-  return [...new Set(ret)];
+  return [...new Set(ret.map((d) => JSON.stringify(d)))].map((d) => JSON.parse(d));
 };
 
 const allowedFields = ['arch', 'link', 'filename', 'filetype', 'md5', 'platform', 'sha512', 'version', 'product'];
@@ -102,7 +101,9 @@ const parseIntMiddleware = (name: string) => {
         sendError(res, {
           status: 400,
           error: `Invalid ${name}`,
-          message: `expected a ${failureReason} value for query parameter '${name}', received '${req.query[name].toString()}'.`,
+          message: `expected a ${failureReason} value for query parameter '${name}', received '${req.query[
+            name
+          ].toString()}'.`,
         } as ReturnError);
         return;
       }

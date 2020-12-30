@@ -70,17 +70,26 @@ const defaultLimit = parseInt(process.env.SPLUNKRELEASES_API_DEFAULT_LIMIT, 10) 
 export const _maxLimit = 100;
 const maxLimit = parseInt(process.env.SPLUNKRELEASES_API_MAX_LIMIT, 10) || _maxLimit;
 
+class ReturnError {
+  status: number;
+  error: string;
+  message?: string;
+}
+const sendError = (res: express.Response, err: ReturnError) => {
+  res.status(err.status);
+  res.send(err);
+};
+
 const downloadReq = (req: express.Request, res: express.Response): void => {
   if (res.locals.downloads.length > 1) {
-    const response = Object();
-    response.error = 'more than one download matches the filter supplied.';
-    response.matches = res.locals.downloads;
-    res.status(400);
-    res.send(response);
+    sendError(res, {
+      status: 400,
+      error: 'Needs Further Filtering',
+      message: `${res.locals.downloads.length} releases found for the filters supplied. Expected 1. See releases for list.`,
+      releases: res.locals.downloads.slice(0, 10),
+    } as ReturnError);
   } else {
-    res.status(303);
-    res.location(res.locals.downloads[0].link);
-    res.send(`303 see other ${res.locals.downloads[0].link}`);
+    res.status(303).location(res.locals.downloads[0].link).send(`303 see other ${res.locals.downloads[0].link}`);
   }
 };
 
@@ -89,8 +98,11 @@ const parseIntMiddleware = (name: string) => {
     if (req.query[name]) {
       res.locals[name] = parseInt(req.query[name].toString(), 10);
       if (isNaN(res.locals[name])) {
-        res.status(400);
-        res.send(`invalid value for query parameter '${name}': ${req.query[name].toString()}`);
+        sendError(res, {
+          status: 400,
+          error: `Invalid ${name}`,
+          message: `expected a numeric value for query parameter '${name}', received '${req.query[name].toString()}'.`,
+        } as ReturnError);
         return;
       }
     }
@@ -99,11 +111,20 @@ const parseIntMiddleware = (name: string) => {
 };
 
 const detailsReq = (req: express.Request, res: express.Response): void => {
+  if (res.locals.limit < 1 || res.locals.limit > maxLimit) {
+    sendError(res, {
+      status: 400,
+      error: `Invalid limit`,
+      message: `expected a value 1-${maxLimit} for query parameter 'limi', received '${res.locals.limit}'`,
+      max: maxLimit,
+      min: 1,
+    } as ReturnError);
+    return;
+  }
   const start = res.locals.start || 0;
-  const limit = Math.min(res.locals.limit || defaultLimit, maxLimit);
+  const limit = res.locals.limit || defaultLimit;
   const slice = res.locals.downloads.slice(start, start + limit);
-  res.status(200);
-  res.send({
+  res.status(200).send({
     total: res.locals.downloads.length,
     count: slice.length,
     start: start,
@@ -118,11 +139,14 @@ const fieldsMiddleware = (req: express.Request, res: express.Response, next: Nex
     const fields: string[] = typeof req.query.field === 'string' ? [req.query.field] : (req.query.field as string[]);
     // Check that each field is valid
     for (let i = 0; i < fields.length; i++) {
-      if (!allowedFields.includes(fields[i])) {
-        res.status(400);
-        res.send(`field '${fields[i]}' is invalid. supported options are: ${allowedFields}.`);
-        return;
-      }
+      if (allowedFields.includes(fields[i])) continue;
+      sendError(res, {
+        status: 400,
+        error: `Invalid Field`,
+        message: `field '${fields[i]}' is invalid.`,
+        allowedFields: allowedFields,
+      } as ReturnError);
+      return;
     }
     // Filter to requested fields
     res.locals.downloads = fieldFilter(res.locals.downloads, req.query.field as string | string[]);
@@ -135,8 +159,17 @@ const filterMiddleware = (req: express.Request, res: express.Response, next: Nex
     .then(() => {
       res.locals.downloads = [...new Set(requestFilter(req))];
       if (res.locals.downloads.length === 0) {
-        res.status(404);
-        res.send('no results found');
+        sendError(res, {
+          status: 404,
+          error: `No Releases`,
+          message: `No releases match the filters provided`,
+          filters: allowedFields
+            .filter((f) => req.query[f])
+            .reduce((obj, f) => {
+              obj[f] = req.query[f];
+              return obj;
+            }, {}), // Needs testing
+        } as ReturnError);
         return;
       }
       next();

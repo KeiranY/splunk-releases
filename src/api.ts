@@ -97,19 +97,12 @@ const parseIntMiddleware = (name: string) => {
   return (req: express.Request, res: express.Response, next: NextFunction): void => {
     if (req.query[name]) {
       res.locals[name] = parseInt(req.query[name].toString(), 10);
-      if (isNaN(res.locals[name])) {
+      const failureReason: string = isNaN(res.locals[name]) ? 'numeric' : res.locals[name] < 0 ? 'positive' : undefined;
+      if (failureReason !== undefined) {
         sendError(res, {
           status: 400,
           error: `Invalid ${name}`,
-          message: `expected a numeric value for query parameter '${name}', received '${req.query[name].toString()}'.`,
-        } as ReturnError);
-        return;
-      }
-      if (res.locals[name] < 0) {
-        sendError(res, {
-          status: 400,
-          error: `Invalid ${name}`,
-          message: `expected a positive value for query parameter '${name}', received '${req.query[name].toString()}'.`,
+          message: `expected a ${failureReason} value for query parameter '${name}', received '${req.query[name].toString()}'.`,
         } as ReturnError);
         return;
       }

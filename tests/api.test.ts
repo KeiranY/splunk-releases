@@ -64,7 +64,11 @@ it('invalid filter value', (done) => {
     })
     .then((res) => {
       expect(res.status).toBe(404);
-      expect(res.data).toBe('no results found');
+      expect(typeof res.data).toBe('object');
+      expect(res.data).toHaveProperty('status', 404);
+      expect(res.data).toHaveProperty('error', 'No Releases');
+      expect(res.data).toHaveProperty('message', 'No releases match the filters provided');
+      expect(res.data).toHaveProperty('filters', { platform: 'invalid' });
       done();
     });
 });
@@ -102,7 +106,11 @@ it('invalid field name', (done) => {
     })
     .then((res) => {
       expect(res.status).toBe(400);
-      expect(res.data).toContain("field 'v' is invalid.");
+      expect(typeof res.data).toBe('object');
+      expect(res.data).toHaveProperty('status', 400);
+      expect(res.data).toHaveProperty('error', 'Invalid Field');
+      expect(res.data).toHaveProperty('message', "field 'v' is invalid.");
+      expect(typeof res.data.allowedFields).toBe('object');
       done();
     });
 });
@@ -142,19 +150,15 @@ it("won't download multiple", (done) => {
         `&product=${product}`,
       { maxRedirects: 0, validateStatus: () => true },
     )
-    .then((result) => {
-      expect(result.status).toBe(400);
-      expect(typeof result.data).toBe('object');
-
-      expect(result.data).toHaveProperty('error');
-      expect(result.data.error).toBe('more than one download matches the filter supplied.');
-
-      expect(result.data).toHaveProperty('matches');
-      expect(typeof result.data.matches).toBe('object');
-      expect(result.data.matches[0].platform).toBe(platform);
-      expect(result.data.matches[0].arch).toBe(architecture);
-      expect(result.data.matches[0].version).toBe(version);
-      expect(result.data.matches[0].product).toBe(product);
+    .then((res) => {
+      expect(res.status).toBe(400);
+      expect(typeof res.data).toBe('object');
+      expect(res.data).toHaveProperty('status', 400);
+      expect(res.data).toHaveProperty('error', 'Needs Further Filtering');
+      expect(res.data).toHaveProperty('message');
+      expect(res.data.message).toContain('releases found for the filters supplied. Expected 1. See releases for list.');
+      expect(res.data).toHaveProperty('releases');
+      expect(res.data.releases.length).toBeLessThanOrEqual(_defaultLimit);
       done();
     });
 });
@@ -176,10 +180,16 @@ describe('pagination', () => {
   });
   it('has max limit', (done) => {
     axios
-      .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?limit=${Number.MAX_SAFE_INTEGER}`)
+      .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?limit=${Number.MAX_SAFE_INTEGER}`, {
+        validateStatus: () => true,
+      })
       .then((res) => {
-        expect(res.data.limit).toBe(_maxLimit);
-        expect(res.data.data.length).toBeLessThanOrEqual(_maxLimit);
+        expect(res.status).toBe(200);
+        expect(typeof res.data).toBe('object');
+        expect(res.data).toHaveProperty('total');
+        expect(res.data).toHaveProperty('count');
+        expect(res.data.count).toEqual(Math.min(_maxLimit, parseInt(res.data.total)));
+        expect(res.data).toHaveProperty('limit', _maxLimit);
         done();
       });
   });
@@ -198,21 +208,33 @@ describe('pagination', () => {
       done();
     });
   });
-  it('rejects invalid start param', (done) => {
+  it('rejects non-numeric integer params', (done) => {
     axios
       .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?start=a`, { validateStatus: () => true })
       .then((res) => {
         expect(res.status).toBe(400);
-        expect(res.data).toBe(`invalid value for query parameter 'start': a`);
+        expect(typeof res.data).toBe('object');
+        expect(res.data).toHaveProperty('status', 400);
+        expect(res.data).toHaveProperty('error', 'Invalid start');
+        expect(res.data).toHaveProperty(
+          'message',
+          `expected a numeric value for query parameter 'start', received 'a'.`,
+        );
         done();
       });
   });
-  it('rejects invalid limit param', (done) => {
+  it('rejects negative integer params', (done) => {
     axios
-      .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?limit=a`, { validateStatus: () => true })
+      .get(`http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/details?limit=-10`, { validateStatus: () => true })
       .then((res) => {
         expect(res.status).toBe(400);
-        expect(res.data).toBe(`invalid value for query parameter 'limit': a`);
+        expect(typeof res.data).toBe('object');
+        expect(res.data).toHaveProperty('status', 400);
+        expect(res.data).toHaveProperty('error', 'Invalid limit');
+        expect(res.data).toHaveProperty(
+          'message',
+          `expected a positive value for query parameter 'limit', received '-10'.`,
+        );
         done();
       });
   });

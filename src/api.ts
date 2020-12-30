@@ -86,7 +86,7 @@ const downloadReq = (req: express.Request, res: express.Response): void => {
       status: 400,
       error: 'Needs Further Filtering',
       message: `${res.locals.downloads.length} releases found for the filters supplied. Expected 1. See releases for list.`,
-      releases: res.locals.downloads.slice(0, 10),
+      releases: res.locals.downloads.slice(0, defaultLimit),
     } as ReturnError);
   } else {
     res.status(303).location(res.locals.downloads[0].link).send(`303 see other ${res.locals.downloads[0].link}`);
@@ -105,24 +105,22 @@ const parseIntMiddleware = (name: string) => {
         } as ReturnError);
         return;
       }
+      if (res.locals[name] < 0) {
+        sendError(res, {
+          status: 400,
+          error: `Invalid ${name}`,
+          message: `expected a positive value for query parameter '${name}', received '${req.query[name].toString()}'.`,
+        } as ReturnError);
+        return;
+      }
     }
     next();
   };
 };
 
 const detailsReq = (req: express.Request, res: express.Response): void => {
-  if (res.locals.limit < 1 || res.locals.limit > maxLimit) {
-    sendError(res, {
-      status: 400,
-      error: `Invalid limit`,
-      message: `expected a value 1-${maxLimit} for query parameter 'limi', received '${res.locals.limit}'`,
-      max: maxLimit,
-      min: 1,
-    } as ReturnError);
-    return;
-  }
   const start = res.locals.start || 0;
-  const limit = res.locals.limit || defaultLimit;
+  const limit = Math.min(res.locals.limit || defaultLimit, maxLimit);
   const slice = res.locals.downloads.slice(start, start + limit);
   res.status(200).send({
     total: res.locals.downloads.length,

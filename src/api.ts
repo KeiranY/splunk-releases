@@ -88,7 +88,15 @@ const downloadReq = (req: express.Request, res: express.Response): void => {
       releases: res.locals.downloads.slice(0, defaultLimit),
     } as ReturnError);
   } else {
-    res.status(303).location(res.locals.downloads[0].link).send(`303 see other ${res.locals.downloads[0].link}`);
+    const out =
+      req.path === '/download'
+        ? res.locals.downloads[0].link
+        : req.path === '/md5'
+        ? res.locals.downloads[0].md5
+        : req.path === '/sha512'
+        ? res.locals.downloads[0].sha512
+        : '';
+    res.status(303).location(out).send(`303 see other ${res.locals.downloads[0].link}`);
   }
 };
 
@@ -175,6 +183,8 @@ const filterMiddleware = (req: express.Request, res: express.Response, next: Nex
 const run = (): http.Server => {
   const app = express();
   app.get('/download', filterMiddleware, downloadReq);
+  app.get('/md5', filterMiddleware, downloadReq);
+  app.get('/sha512', filterMiddleware, downloadReq);
   app.get(
     '/details',
     filterMiddleware,

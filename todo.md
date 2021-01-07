@@ -1,6 +1,5 @@
 # Todo
 
-
 - [ ] test: split unit & integration tests 
 
 - [ ] test(api): pagination env variable test
@@ -11,9 +10,9 @@
 
 - [ ] feat(api): cause updateDownloads to refresh available releases periodically
 
-
 ## Complete
 
+- [x] ~~feat(api): add checksum downloads~~
 - [x] ~~feat(api): pagination~~
 - [x] ~~docs(api): update postman docs~~
 - [x] ~~refactor: clean up fields in Download object (remove)~~

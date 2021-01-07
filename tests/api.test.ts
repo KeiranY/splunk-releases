@@ -141,6 +141,56 @@ it('redirects to download', (done) => {
     });
 });
 
+it('redirects to md5', (done) => {
+  axios
+    .get(
+      `http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/md5` +
+        `?platform=${platform}` +
+        `&arch=${architecture}` +
+        `&version=${version}` +
+        `&filetype=${filetype}` +
+        `&product=${product}`,
+      { maxRedirects: 0, validateStatus: () => true },
+    )
+    .then((result) => {
+      expect(result.status).toBe(303);
+      expect(typeof result.data).toBe('string');
+      expect(result.data).toContain('303 see other');
+      expect(result.headers).toHaveProperty('location');
+      expect(result.headers.location).toContain('download.splunk.com');
+      expect(result.headers.location).toContain(platform);
+      expect(result.headers.location).toContain(architecture);
+      expect(result.headers.location).toContain(version);
+      expect(result.headers.location).toContain('.md5');
+      done();
+    });
+});
+
+it('redirects to sha512', (done) => {
+  axios
+    .get(
+      `http://localhost:${process.env.SPLUNKRELEASES_APIPORT}/sha512` +
+        `?platform=${platform}` +
+        `&arch=${architecture}` +
+        `&version=${version}` +
+        `&filetype=${filetype}` +
+        `&product=${product}`,
+      { maxRedirects: 0, validateStatus: () => true },
+    )
+    .then((result) => {
+      expect(result.status).toBe(303);
+      expect(typeof result.data).toBe('string');
+      expect(result.data).toContain('303 see other');
+      expect(result.headers).toHaveProperty('location');
+      expect(result.headers.location).toContain('download.splunk.com');
+      expect(result.headers.location).toContain(platform);
+      expect(result.headers.location).toContain(architecture);
+      expect(result.headers.location).toContain(version);
+      expect(result.headers.location).toContain('.sha512');
+      done();
+    });
+});
+
 it("won't download multiple", (done) => {
   axios
     .get(

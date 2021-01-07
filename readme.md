@@ -9,12 +9,27 @@ Collection of utilites for interacting with Splunk Enterprise/Universal forwarde
 #### Table of Contents
 - [Splunk Releases](#splunk-releases)
       - [Table of Contents](#table-of-contents)
+  - [Usage](#usage)
   - [Command Line](#command-line)
-    - [Usage](#usage)
+    - [Usage](#usage-1)
     - [Environment Variables](#environment-variables)
     - [Example](#example)
   - [Rest API](#rest-api)
+    - [Usage](#usage-2)
+    - [Environmant Variables](#environmant-variables)
     - [Documentation](#documentation)
+
+## Usage
+
+After downloading, install prerequisites with [npm](https://www.npmjs.com/get-npm) 
+```
+$ npm i
+```
+Then build the JS versions of the tools
+```
+$ npm run build
+```
+
 
 ## Command Line
 
@@ -22,6 +37,8 @@ The command line utility can be used to retrieve the download link to a Splunk r
 
 ### Usage
 ```
+$ npm run cli
+
 Usage: cli [options]
 
 Options:
@@ -53,7 +70,26 @@ Environment variables can also supply filters, cli parameters take precedence ov
 
 ## Rest API
 
+The REST API lets you retrieve info about splunk release (`/details`) or to download individual releases directly (`/download`).
+
+An example of the API server *may* be running at [sr.keirany.com](https://sr.keirany.com/details?limit=1).
+
+### Usage
+
+```
+$ npm run api
+```
+
+### Environmant Variables
+
+| Environment Variable | Description     | Default   |
+| --- | --- | --- |
+| SPLUNKRELEASES_API_MAX_LIMIT | Sets the max number of relases returned in a page | 100 |
+| SPLUNKRELEASES_API_DEFAULT_LIMIT | Sets the default number of relases returned in a page | 10 |
+| SPLUNKRELEASES_APIPORT | Web server port | Random between 1024-65536 |
+| SPLUNKRELEASES_APIRETRIES | Attempts to bind to port |5 |
+
 ### Documentation
 
-See the [Postman Collection](#TODO) for documentation and examples for the Rest API
+See the [SwaggerHub Page](https://app.swaggerhub.com/apis-docs/KeiranY/splunk-releases) for documentation and examples for the Rest API (OpenApi3 spec [here](https://app.swaggerhub.com/apis/KeiranY/splunk-releases)).
 

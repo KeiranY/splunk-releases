@@ -15,6 +15,7 @@ module.exports = {
   ],
   rules: {
     'no-trailing-spaces': 'error',
+    'prettier/prettier': 'warn',
   },
   env: { node: true },
 };

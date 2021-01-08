@@ -133,15 +133,14 @@ it('Downloads to file', (done) => {
     // Mock the file being downloaded
     nock('https://download.splunk.com')
       .get('/products/splunk/releases/8.1.0/linux/splunk-8.1.0-f57c09e87251-Linux-x86_64.tgz')
-      .reply(200, 'Mock Data');
-
+      .reply(200, 'Mock Data', { 'content-length': '9' });
     // eslint-disable-next-line prettier/prettier
     process.argv = ['node', 'cli.js', 'download', '-p', platform, '-a', architecture, '-v', version, '-f', filetype, '-r', product];
-    require('../src/cli').main();
-
-    mockStream.on('finish', () => {
-      expect(mockStream.data.toString()).toBe('Mock Data');
-      done();
-    });
+    require('../src/cli')
+      .main()
+      .then(() => {
+        expect(mockStream.data.toString()).toBe('Mock Data');
+        done();
+      });
   });
 });

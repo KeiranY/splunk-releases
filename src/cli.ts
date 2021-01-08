@@ -6,10 +6,7 @@ import { Download, getDownloads } from './download';
 import { program } from 'commander';
 import chalk from 'chalk';
 import cliProgress from 'cli-progress';
-import digestStream from 'digest-stream';
-import { pipeline } from 'stream';
 import crypto from 'crypto';
-import e from 'express';
 
 program
   .storeOptionsAsProperties(false)

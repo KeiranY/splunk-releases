@@ -40,6 +40,7 @@ const requestFilter = (req: express.Request & { query: ParsedQs }): Download[] =
   ret = stringMatch(req, 'arch', ret);
   ret = stringMatch(req, 'filetype', ret);
   ret = stringMatch(req, 'product', ret);
+  ret = stringMatch(req, 'filename', ret);
   ret = ret.filter((x) => !req.query.version || versionMatch(req.query.version.toString(), x.version));
   return ret;
 };

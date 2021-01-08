@@ -3,15 +3,14 @@
 - [ ] test: split unit & integration tests 
 
 - [ ] test(api): pagination env variable test
-
 - [ ] fix(api): remove duplicate results seen when supplying multiple fields i.e. /details?field=version&field=product
-
-- [ ] feat(cli): calculate md5/sha digest with [digest-stream](https://github.com/jeffbski/digest-stream) and output results when downloading.
-
 - [ ] feat(api): cause updateDownloads to refresh available releases periodically
+- [ ] test(cli): checksum tests
+- [ ] test(cli): additional download tests (filename)
 
 ## Complete
 
+- [x] feat(cli): calculate md5/sha digest with [digest-stream](https://github.com/jeffbski/digest-stream) and output results when downloading.
 - [x] ~~feat(api): add checksum downloads~~
 - [x] ~~feat(api): pagination~~
 - [x] ~~docs(api): update postman docs~~

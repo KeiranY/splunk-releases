@@ -1,4 +1,5 @@
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/KeiranY/splunk-releases/Jest%20&%20Codecov)](https://github.com/KeiranY/splunk-releases/actions?query=workflow%3A%22Jest+%26+Codecov%22)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/KeiranY/splunk-releases/Jest%20&%20Codecov?logo=github)](https://github.com/KeiranY/splunk-releases/actions?query=workflow%3A%22Jest+%26+Codecov%22)
+[![OpenAPI Verstion](https://img.shields.io/badge/dynamic/json?logo=openapi-initiative&logoColor=FFFFFF&color=success&label=OpenAPI&query=defaultVersion&url=https%3A%2F%2Fapp.swaggerhub.com%2Fapiproxy%2Fregistry%2FKeiranY%2Fsplunk-releases%2F.meta)](https://app.swaggerhub.com/apis-docs/KeiranY/splunk-releases)
 [![Codecov](https://img.shields.io/codecov/c/github/KeiranY/splunk-releases)](https://codecov.io/gh/KeiranY/splunk-releases)
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/KeiranY/splunk-releases)](https://www.codefactor.io/repository/github/keirany/splunk-releases)
 

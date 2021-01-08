@@ -136,7 +136,7 @@ it('Downloads to file', (done) => {
       .reply(200, 'Mock Data');
 
     // eslint-disable-next-line prettier/prettier
-    process.argv = ['node', 'cli.js', '-d', '-p', platform, '-a', architecture, '-v', version, '-f', filetype, '-r', product];
+    process.argv = ['node', 'cli.js', 'download', '-p', platform, '-a', architecture, '-v', version, '-f', filetype, '-r', product];
     require('../src/cli').main();
 
     mockStream.on('finish', () => {

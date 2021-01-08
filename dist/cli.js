@@ -98,7 +98,7 @@ const download = (filename) => __awaiter(void 0, void 0, void 0, function* () {
         hideCursor: true,
     });
     const hash = createHash();
-    return new Promise((resolve) => {
+    return new Promise((resolve, _reject) => {
         https_1.default.get(download.link, (response) => {
             bar.start(parseInt(response.headers['content-length']), 0);
             response

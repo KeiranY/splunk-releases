@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import axios from 'axios';
 import http from 'http';
 import api, { _defaultLimit, _maxLimit } from '../src/api';

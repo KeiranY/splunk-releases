@@ -81,29 +81,32 @@ const details = async (): Promise<void> => {
 
 const download = async (filename: string) => {
   const download = (await filter())[0];
-  https.get(download.link, (response) => {
-    filename = filename || download.filename;
-    const outFile = fs.createWriteStream(filename, { encoding: null });
-    const bar = new cliProgress.SingleBar({
-      format: `${chalk.green(filename)} ${chalk.cyan('{bar}')} | {percentage}% | {value}/{total}  | ETA: {eta}s`,
-      barCompleteChar: '\u2588',
-      barIncompleteChar: '\u2591',
-      hideCursor: true,
+  filename = filename || download.filename;
+  const outFile = fs.createWriteStream(filename, { encoding: null });
+  const bar = new cliProgress.SingleBar({
+    format: `${chalk.green(filename)} ${chalk.cyan('{bar}')} | {percentage}% | {value}/{total}  | ETA: {eta}s`,
+    barCompleteChar: '\u2588',
+    barIncompleteChar: '\u2591',
+    hideCursor: true,
+  });
+  const hash = createHash();
+  return new Promise<void>((resolve, _reject) => {
+    https.get(download.link, (response) => {
+      bar.start(parseInt(response.headers['content-length']), 0);
+      response
+        .on('end', () => {
+          bar.stop();
+          console.log(chalk.bold('Downloaded to: ') + chalk.underline(outFile.path));
+          outFile.end();
+          checkHash(download, hash);
+          resolve();
+        })
+        .on('data', (chunk) => {
+          bar.increment(chunk.length);
+          if (hash) hash.update(chunk);
+        })
+        .pipe(outFile);
     });
-    bar.start(parseInt(response.headers['content-length']), 0);
-    const hash = createHash();
-    response
-      .on('close', () => {
-        bar.stop();
-        console.log(chalk.bold('Downloaded to: ') + chalk.underline(outFile.path));
-        outFile.close();
-        checkHash(download, hash);
-      })
-      .on('data', (chunk) => {
-        bar.increment(chunk.length);
-        if (hash) hash.update(chunk);
-      })
-      .pipe(outFile);
   });
 };
 
@@ -111,10 +114,6 @@ export const main = async (): Promise<void> => {
   await program.parseAsync(process.argv);
   return;
 };
-
-if (require.main === module) {
-  main();
-}
 
 program
   .storeOptionsAsProperties(false)
@@ -133,3 +132,7 @@ program
   .usage('download [filename] <c md5|sha512>')
   .option('-c --checksum <md5|sha512>', 'calculate checksum of download')
   .action(download);
+
+if (require.main === module) {
+  main();
+}

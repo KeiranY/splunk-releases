@@ -10,33 +10,27 @@ Collection of utilites for interacting with Splunk Enterprise/Universal forwarde
 #### Table of Contents
 - [Splunk Releases](#splunk-releases)
       - [Table of Contents](#table-of-contents)
-  - [Usage](#usage)
   - [Command Line](#command-line)
-    - [Usage](#usage-1)
+    - [Usage](#usage)
+    - [Flags](#flags)
     - [Environment Variables](#environment-variables)
     - [Example](#example)
   - [Rest API](#rest-api)
-    - [Usage](#usage-2)
+    - [Usage](#usage-1)
     - [Environmant Variables](#environmant-variables)
     - [Documentation](#documentation)
-
-## Usage
-
-After downloading, install prerequisites with [npm](https://www.npmjs.com/get-npm) 
-```
-$ npm i
-```
-Then build the JS versions of the tools
-```
-$ npm run build
-```
-
 
 ## Command Line
 
 The command line utility can be used to retrieve the download link to a Splunk release
 
 ### Usage
+
+Run the CLI tool *once* using: `npx github:KeiranY/splunk-releases`
+
+Install the CLI tool with: `npm i -g github:KeiranY/splunk-releases` and run with `sr-api`.
+
+### Flags
 ```
 $ npm run cli
 
@@ -77,9 +71,9 @@ An example of the API server *may* be running at [sr.keirany.com](https://sr.kei
 
 ### Usage
 
-```
-$ npm run api
-```
+Run the CLI tool *once* using: `npx -p github:KeiranY/splunk-releases sr-cli`
+
+Install the CLI tool with: `npm i -g github:KeiranY/splunk-releases` and run with `sr-cli`.
 
 ### Environmant Variables
 

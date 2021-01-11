@@ -127,11 +127,11 @@ program
   .action(details);
 
 program
+  .option('-c, --checksum <md5|sha512>', 'calculate checksum of download')
   .command('download [filename]')
   .aliases(['d', 'dl'])
   .description('download a splunk release', { checksum: 'calculate checksum of download' })
   .usage('download [filename] <c md5|sha512>')
-  .option('-c --checksum <md5|sha512>', 'calculate checksum of download')
   .action(download);
 
 if (require.main === module) {

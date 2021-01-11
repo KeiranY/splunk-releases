@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import https from 'https';
 import fs from 'fs';
 import inquirer from 'inquirer';

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import http from 'http';
 import chalk from 'chalk';
 import express, { NextFunction } from 'express';

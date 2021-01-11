@@ -28,7 +28,7 @@ The command line utility can be used to retrieve the download link to a Splunk r
 
 Run the CLI tool *once* using: `npx github:KeiranY/splunk-releases`
 
-Install the CLI tool with: `npm i -g github:KeiranY/splunk-releases` and run with `sr-api`.
+Install the CLI tool with: `npm i -g github:KeiranY/splunk-releases` and run with `sr-cli`.
 
 ### Flags
 ```
@@ -71,9 +71,9 @@ An example of the API server *may* be running at [sr.keirany.com](https://sr.kei
 
 ### Usage
 
-Run the CLI tool *once* using: `npx -p github:KeiranY/splunk-releases sr-cli`
+Run the CLI tool *once* using: `npx -p github:KeiranY/splunk-releases sr-api`
 
-Install the CLI tool with: `npm i -g github:KeiranY/splunk-releases` and run with `sr-cli`.
+Install the CLI tool with: `npm i -g github:KeiranY/splunk-releases` and run with `sr-api`.
 
 ### Environmant Variables
 

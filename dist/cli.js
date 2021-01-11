@@ -28,8 +28,8 @@ const createHash = () => {
     const hashes = ['md5', 'sha512'].filter((x) => crypto_1.default.getHashes().includes(x));
     if (!hashes.includes(commander_1.program.opts()['checksum'])) {
         console.log(`${chalk_1.default.stderr('error:')} provided checksum type ${commander_1.program.opts()['checksum']} is unsupported.
-      splunk-releases supports md5,sha512.
-      openSSL on this machine supports ${hashes}`);
+splunk-releases supports md5,sha512.
+openSSL on this machine supports ${hashes}`);
         process.exit(2);
     }
     return crypto_1.default.createHash(commander_1.program.opts()['checksum']);
@@ -37,7 +37,7 @@ const createHash = () => {
 const checkHash = (download, hash) => {
     if (!hash)
         return;
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
         https_1.default.get(commander_1.program.opts()['checksum'] === 'md5' ? download.md5 : download.sha512, (res) => {
             const body = [];
             res.on('data', (c) => body.push(c));
@@ -121,10 +121,11 @@ const download = (filename) => __awaiter(void 0, void 0, void 0, function* () {
         });
     });
 });
-exports.main = () => __awaiter(void 0, void 0, void 0, function* () {
+const main = () => __awaiter(void 0, void 0, void 0, function* () {
     yield commander_1.program.parseAsync(process.argv);
     return;
 });
+exports.main = main;
 commander_1.program
     .storeOptionsAsProperties(false)
     .option('-p, --platform <platform>', 'platform filter i.e. linux', process.env.SPLUNKRELEASES_PLATFORM)
@@ -132,7 +133,8 @@ commander_1.program
     .option('-v, --version <version>', 'version filter i.e 8.1.0', process.env.SPLUNKRELEASES_VERSION)
     .option('-f, --filetype <filetype>', 'filetype filter i.e tgz', process.env.SPLUNKRELEASES_FILETYPE)
     .option('-r, --product <product>', 'product filter (enterprise/forwarder)', process.env.SPLUNKRELEASES_PRODUCT)
-    .command('details', { isDefault: true, hidden: true })
+    .command('search', { isDefault: true })
+    .description('(default) search for a splunk release')
     .action(details);
 commander_1.program
     .option('-c, --checksum <md5|sha512>', 'calculate checksum of download')

@@ -125,7 +125,8 @@ program
   .option('-v, --version <version>', 'version filter i.e 8.1.0', process.env.SPLUNKRELEASES_VERSION)
   .option('-f, --filetype <filetype>', 'filetype filter i.e tgz', process.env.SPLUNKRELEASES_FILETYPE)
   .option('-r, --product <product>', 'product filter (enterprise/forwarder)', process.env.SPLUNKRELEASES_PRODUCT)
-  .command('details', { isDefault: true, hidden: true })
+  .command('search', { isDefault: true })
+  .description('(default) search for a splunk release')
   .action(details);
 
 program

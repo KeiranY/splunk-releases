@@ -32,18 +32,23 @@ Install the CLI tool with: `npm i -g github:KeiranY/splunk-releases` and run wit
 
 ### Flags
 ```
-$ npm run cli
+$ sr-cli
 
-Usage: cli [options]
+Usage: cli [options] [command]
 
 Options:
-  -d, --download [filename]  download splunk to [filename]
-  -p, --platform <platform>  filter to specified platform i.e. linux
-  -a, --arch <arch>          filter to specified architecture i.e x86_64
-  -v, --version <version>    filter to specified version i.e 8.1.0.1
-  -f, --filetype <filetype>  filter to specified filetype i.e tgz
-  -r, --product <product>    filter to specified platform (enterprise/forwarder)
-  -h, --help                 display help for command
+  -p, --platform <platform>    platform filter i.e. linux
+  -a, --arch <arch>            architecture filter i.e x86_64
+  -v, --version <version>      version filter i.e 8.1.0
+  -f, --filetype <filetype>    filetype filter i.e tgz
+  -r, --product <product>      product filter (enterprise/forwarder)
+  -c, --checksum <md5|sha512>  calculate checksum of download
+  -h, --help                   display help for command
+
+Commands:
+  search                       (default) search for a splunk release
+  download|d [filename]        download a splunk release
+  help [command]               display help for command
 ```
 
 ### Environment Variables

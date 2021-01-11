@@ -6,6 +6,7 @@
 - [ ] fix(api): remove duplicate results seen when supplying multiple fields i.e. /details?field=version&field=product
 - [ ] feat(api): cause updateDownloads to refresh available releases periodically
 - [ ] test(cli): checksum tests
+- [ ] docs(cli): checksum documentation
 - [ ] test(cli): additional download tests (filename)
 
 ## Complete

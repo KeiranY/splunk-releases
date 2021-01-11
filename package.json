@@ -2,9 +2,8 @@
   "name": "splunk-releases",
   "version": "1.0.0",
   "description": "Provides API/REST/CLI utilities to retrieve and filter the list of Splunk Enterprise/Universal Forwarder releases.",
-  "main": "dist/index.js",
-  "bin":{
-    "splunk-releases": "dist/index.js",
+  "main": "dist/cli.js",
+  "bin": {
     "sr-api": "dist/api.js",
     "sr-cli": "dist/cli.js"
   },

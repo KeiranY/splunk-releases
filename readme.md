@@ -63,6 +63,7 @@ Environment variables can also supply filters, cli parameters take precedence ov
 | SPLUNKRELEASES_FILETYPE   | -f   | tgz       |
 | SPLUNKRELEASES_PRODUCT    | -r   | forwarder |
 | SPLUNKRELEASES_DOWNLOAD   | -d   | splunk.tgz|
+| SPLUNKRELEASES_CHECKSUM   | -c   | md5       |
 
 ### Example
 ![Example of using the splunk releases CLI command](./cli-example.gif)

@@ -121,11 +121,10 @@ const download = (filename) => __awaiter(void 0, void 0, void 0, function* () {
         });
     });
 });
-const main = () => __awaiter(void 0, void 0, void 0, function* () {
+exports.main = () => __awaiter(void 0, void 0, void 0, function* () {
     yield commander_1.program.parseAsync(process.argv);
     return;
 });
-exports.main = main;
 commander_1.program
     .storeOptionsAsProperties(false)
     .option('-p, --platform <platform>', 'platform filter i.e. linux', process.env.SPLUNKRELEASES_PLATFORM)
@@ -137,7 +136,7 @@ commander_1.program
     .description('(default) search for a splunk release')
     .action(details);
 commander_1.program
-    .option('-c, --checksum <md5|sha512>', 'calculate checksum of download')
+    .option('-c, --checksum <md5|sha512>', 'calculate checksum of download', process.env.SPLUNKRELEASES_CHECKSUM)
     .command('download [filename]')
     .aliases(['d', 'dl'])
     .description('download a splunk release', { checksum: 'calculate checksum of download' })

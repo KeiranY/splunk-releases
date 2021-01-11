@@ -4,8 +4,8 @@
   "description": "Provides API/REST/CLI utilities to retrieve and filter the list of Splunk Enterprise/Universal Forwarder releases.",
   "main": "dist/cli.js",
   "bin": {
-    "sr-api": "dist/api.js",
-    "sr-cli": "dist/cli.js"
+    "sr-cli": "dist/cli.js",
+    "sr-api": "dist/api.js"
   },
   "scripts": {
     "build": "tsc",

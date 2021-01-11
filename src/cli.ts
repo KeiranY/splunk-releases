@@ -4,7 +4,7 @@ import fs from 'fs';
 import inquirer from 'inquirer';
 import { ListQuestion } from 'inquirer';
 import { Download, getDownloads } from './download';
-import { Command, program } from 'commander';
+import { program } from 'commander';
 import chalk from 'chalk';
 import cliProgress from 'cli-progress';
 import crypto from 'crypto';
@@ -14,8 +14,8 @@ const createHash = (): crypto.Hash | null => {
   const hashes = ['md5', 'sha512'].filter((x) => crypto.getHashes().includes(x));
   if (!hashes.includes(program.opts()['checksum'])) {
     console.log(`${chalk.stderr('error:')} provided checksum type ${program.opts()['checksum']} is unsupported.
-      splunk-releases supports md5,sha512.
-      openSSL on this machine supports ${hashes}`);
+splunk-releases supports md5,sha512.
+openSSL on this machine supports ${hashes}`);
     process.exit(2);
   }
   return crypto.createHash(program.opts()['checksum']);
@@ -23,22 +23,25 @@ const createHash = (): crypto.Hash | null => {
 
 const checkHash = (download: Download, hash: crypto.Hash | null) => {
   if (!hash) return;
-  https.get(program.opts()['checksum'] === 'md5' ? download.md5 : download.sha512, (res) => {
-    const body = [];
-    res.on('data', (c) => body.push(c));
-    res.on('end', () => {
-      const splunkHash = Buffer.concat(body).toString().split('=')[1].trim();
-      const downloadHash = hash.digest('hex');
-      if (splunkHash !== downloadHash) {
-        console.log(
-          `${chalk.stderr('error:')} download ${program.opts()['checksum']} hash is ${chalk.stderr(
-            downloadHash,
-          )} expected ${splunkHash}`,
-        );
-        process.exit(3);
-      } else {
-        console.log(`${program.opts()['checksum']} hash ${chalk.green(downloadHash)} matches`);
-      }
+  return new Promise<void>((resolve, _reject) => {
+    https.get(program.opts()['checksum'] === 'md5' ? download.md5 : download.sha512, (res) => {
+      const body = [];
+      res.on('data', (c) => body.push(c));
+      res.on('end', () => {
+        const splunkHash = Buffer.concat(body).toString().split('=')[1].trim();
+        const downloadHash = hash.digest('hex');
+        if (splunkHash !== downloadHash) {
+          console.log(
+            `${chalk.stderr('error:')} download ${program.opts()['checksum']} hash is ${chalk.stderr(
+              downloadHash,
+            )} expected ${splunkHash}`,
+          );
+          process.exit(3);
+        } else {
+          console.log(`${program.opts()['checksum']} hash ${chalk.green(downloadHash)} matches`);
+        }
+        resolve();
+      });
     });
   });
 };
@@ -99,8 +102,7 @@ const download = async (filename: string) => {
           bar.stop();
           console.log(chalk.bold('Downloaded to: ') + chalk.underline(outFile.path));
           outFile.end();
-          checkHash(download, hash);
-          resolve();
+          resolve(checkHash(download, hash));
         })
         .on('data', (chunk) => {
           bar.increment(chunk.length);

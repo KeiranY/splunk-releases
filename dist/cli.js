@@ -37,19 +37,22 @@ const createHash = () => {
 const checkHash = (download, hash) => {
     if (!hash)
         return;
-    https_1.default.get(commander_1.program.opts()['checksum'] === 'md5' ? download.md5 : download.sha512, (res) => {
-        const body = [];
-        res.on('data', (c) => body.push(c));
-        res.on('end', () => {
-            const splunkHash = Buffer.concat(body).toString().split('=')[1].trim();
-            const downloadHash = hash.digest('hex');
-            if (splunkHash !== downloadHash) {
-                console.log(`${chalk_1.default.stderr('error:')} download ${commander_1.program.opts()['checksum']} hash is ${chalk_1.default.stderr(downloadHash)} expected ${splunkHash}`);
-                process.exit(3);
-            }
-            else {
-                console.log(`${commander_1.program.opts()['checksum']} hash ${chalk_1.default.green(downloadHash)} matches`);
-            }
+    return new Promise((resolve, reject) => {
+        https_1.default.get(commander_1.program.opts()['checksum'] === 'md5' ? download.md5 : download.sha512, (res) => {
+            const body = [];
+            res.on('data', (c) => body.push(c));
+            res.on('end', () => {
+                const splunkHash = Buffer.concat(body).toString().split('=')[1].trim();
+                const downloadHash = hash.digest('hex');
+                if (splunkHash !== downloadHash) {
+                    console.log(`${chalk_1.default.stderr('error:')} download ${commander_1.program.opts()['checksum']} hash is ${chalk_1.default.stderr(downloadHash)} expected ${splunkHash}`);
+                    process.exit(3);
+                }
+                else {
+                    console.log(`${commander_1.program.opts()['checksum']} hash ${chalk_1.default.green(downloadHash)} matches`);
+                }
+                resolve();
+            });
         });
     });
 };
@@ -107,8 +110,7 @@ const download = (filename) => __awaiter(void 0, void 0, void 0, function* () {
                 bar.stop();
                 console.log(chalk_1.default.bold('Downloaded to: ') + chalk_1.default.underline(outFile.path));
                 outFile.end();
-                checkHash(download, hash);
-                resolve();
+                resolve(checkHash(download, hash));
             })
                 .on('data', (chunk) => {
                 bar.increment(chunk.length);
@@ -119,11 +121,10 @@ const download = (filename) => __awaiter(void 0, void 0, void 0, function* () {
         });
     });
 });
-const main = () => __awaiter(void 0, void 0, void 0, function* () {
+exports.main = () => __awaiter(void 0, void 0, void 0, function* () {
     yield commander_1.program.parseAsync(process.argv);
     return;
 });
-exports.main = main;
 commander_1.program
     .storeOptionsAsProperties(false)
     .option('-p, --platform <platform>', 'platform filter i.e. linux', process.env.SPLUNKRELEASES_PLATFORM)
@@ -134,11 +135,11 @@ commander_1.program
     .command('details', { isDefault: true, hidden: true })
     .action(details);
 commander_1.program
+    .option('-c, --checksum <md5|sha512>', 'calculate checksum of download')
     .command('download [filename]')
     .aliases(['d', 'dl'])
     .description('download a splunk release', { checksum: 'calculate checksum of download' })
     .usage('download [filename] <c md5|sha512>')
-    .option('-c --checksum <md5|sha512>', 'calculate checksum of download')
     .action(download);
 if (require.main === module) {
     exports.main();
